@@ -1,4 +1,4 @@
-package com.example.SpringSight;
+package com.example.SprintSight;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
