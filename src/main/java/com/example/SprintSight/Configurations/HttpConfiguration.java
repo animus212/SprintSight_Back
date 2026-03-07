@@ -1,4 +1,4 @@
-package com.example.SprintSight.configs;
+package com.example.SprintSight.Configurations;
 
 import org.apache.catalina.connector.Connector;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class HttpServer {
+public class HttpConfiguration {
     @Bean
     public ServletWebServerFactory servletContainer(@Value("${server.http.port}") int httpPort) {
         Connector connector = new Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL);
