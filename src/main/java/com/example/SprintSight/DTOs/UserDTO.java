@@ -2,6 +2,7 @@ package com.example.SprintSight.DTOs;
 
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,18 +14,17 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserDTO {
-
     private UUID id;
 
-
+    @NotBlank
     @Column(length = 50, nullable = false)
     private String username;
-
 
     @Size(min = 8, max = 255)
     private String password;
 
     @Email
+    @NotBlank
     @Size(max = 255)
     private String email;
 
