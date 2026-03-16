@@ -1,6 +1,7 @@
 package com.example.SprintSight.Exceptions;
 
-import jakarta.servlet.http.HttpServletResponse;
+import com.example.SprintSight.DTOs.ApiResponse;
+import com.example.SprintSight.DTOs.FieldValidationError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -9,39 +10,32 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<?> handleBadCredentials(BadCredentialsException ex) {
-        return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
-                .body(Map.of("error", "Invalid username or password"));
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleOtherExceptions(Exception ex) {
-        return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse<>("Invalid username or password", null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        List<FieldError> errors = ex.getBindingResult().getFieldErrors()
+    public ResponseEntity<ApiResponse<List<FieldValidationError>>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
+        List<FieldValidationError> errors = ex.getBindingResult()
+                .getFieldErrors()
                 .stream()
-                .map(err -> new FieldError(err.getField(), err.getDefaultMessage()))
-                .collect(Collectors.toList());
+                .map(err -> new FieldValidationError(
+                        err.getField(),
+                        err.getDefaultMessage()))
+                .toList();
 
-        ValidationErrorResponse response = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation failed",
-                errors
-        );
-
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.badRequest().body(new ApiResponse<>("Validation failed", errors));
     }
 
-    record ValidationErrorResponse(int status, String message, List<FieldError> errors) {}
-    record FieldError(String field, String error) {}
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleOtherExceptions(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(ex.getMessage(), null));
+    }
 }
