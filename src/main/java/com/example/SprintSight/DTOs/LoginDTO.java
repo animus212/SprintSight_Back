@@ -11,10 +11,8 @@ import lombok.*;
 @AllArgsConstructor
 public class LoginDTO {
     @NotBlank
-    @Size(min = 3, max = 50)
     private String username;
 
     @NotBlank
-    @Size(min = 8, max = 255)
     private String password;
 }
