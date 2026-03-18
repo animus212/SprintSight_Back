@@ -1,7 +1,7 @@
 package com.example.SprintSight.Configurations;
 
 import com.example.SprintSight.Filters.JwtFilter;
-import jakarta.servlet.http.HttpServletResponse;
+import com.example.SprintSight.Security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfiguration {
     private final JwtFilter jwtFilter;
+    private JwtAuthenticationEntryPoint unauthorizedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -43,9 +44,8 @@ public class SecurityConfiguration {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, ex2) ->
-                                res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(unauthorizedHandler)
                 );
 
         return http.build();
