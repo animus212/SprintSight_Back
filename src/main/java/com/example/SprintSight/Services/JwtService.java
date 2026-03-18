@@ -66,9 +66,7 @@ public class JwtService {
     }
 
     public boolean validateJwtToken(String token, UserDetails userDetails) {
-        final String userName = extractUserName(token);
-
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return (extractUserName(token).equals(userDetails.getUsername()));
     }
 
     private SecretKey getKey() {
@@ -101,9 +99,5 @@ public class JwtService {
         }
 
         return null;
-    }
-
-    private boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 }
