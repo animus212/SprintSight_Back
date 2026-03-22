@@ -1,7 +1,8 @@
 package com.example.SprintSight.Exceptions;
 
-import com.example.SprintSight.DTOs.ApiResponse;
+import com.example.SprintSight.DTOs.ApiError;
 import com.example.SprintSight.DTOs.FieldValidationError;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -11,31 +12,40 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
+    public ResponseEntity<ApiError> handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Failed login attempt: {}", ex.getMessage());
+
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse<>("Invalid username or password", null));
+                .body(new ApiError("Invalid username or password"));
+    }
+
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<ApiError> handleTokenRefreshException(TokenRefreshException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiError(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<List<FieldValidationError>>> handleValidationExceptions(
-            MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
         List<FieldValidationError> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(err -> new FieldValidationError(
-                        err.getField(),
-                        err.getDefaultMessage()))
+                .map(err -> new FieldValidationError(err.getField(), err.getDefaultMessage()))
                 .toList();
 
-        return ResponseEntity.badRequest().body(new ApiResponse<>("Validation failed", errors));
+        return ResponseEntity.badRequest()
+                .body(new ApiError("Validation failed", errors));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleOtherExceptions(Exception ex) {
+    public ResponseEntity<ApiError> handleOtherExceptions(Exception ex) {
+        log.error("Unexpected error: ", ex);
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(ex.getMessage(), null));
+                .body(new ApiError("An unexpected error occurred"));
     }
 }
