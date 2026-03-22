@@ -1,6 +1,6 @@
 package com.example.SprintSight.Security;
 
-import com.example.SprintSight.DTOs.ApiError;
+import com.example.SprintSight.Payloads.Responses.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,6 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
-
     private final ObjectMapper objectMapper;
 
     @Override

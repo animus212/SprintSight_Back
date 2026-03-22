@@ -1,7 +1,7 @@
 package com.example.SprintSight.Exceptions;
 
-import com.example.SprintSight.DTOs.ApiError;
-import com.example.SprintSight.DTOs.FieldValidationError;
+import com.example.SprintSight.Payloads.Responses.ApiError;
+import com.example.SprintSight.Payloads.Responses.FieldValidationError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +26,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TokenRefreshException.class)
     public ResponseEntity<ApiError> handleTokenRefreshException(TokenRefreshException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiError(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiError> handleUserNotFoundException(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiError(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError(ex.getMessage()));
+    }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ApiError(ex.getMessage()));
     }
 

@@ -1,59 +1,84 @@
 package com.example.SprintSight.Services;
 
-import com.example.SprintSight.DTOs.UserDTO;
 import com.example.SprintSight.Entities.User;
+import com.example.SprintSight.Exceptions.*;
+import com.example.SprintSight.Payloads.Requests.RegisterRequest;
+import com.example.SprintSight.Payloads.Requests.UpdateUserRequest;
+import com.example.SprintSight.Payloads.Responses.UserResponse;
 import com.example.SprintSight.Repositories.UserRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
-import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
 
     @Transactional
-    public User AddUser(User user) {
-        if (userRepository.existsByUsername(user.getUsername())) {
-            throw new IllegalArgumentException("Username is already taken");
+    public UserResponse addUser(RegisterRequest request) {
+        if (userRepository.existsByUsername(request.username())) {
+            throw new UsernameAlreadyExistsException("Username is already taken");
         }
 
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Email is already registered");
+        if (userRepository.existsByEmail(request.email())) {
+            throw new EmailAlreadyExistsException("Email is already registered");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User user = new User();
+        user.setUsername(request.username());
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setFullName(request.fullName());
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+
+        log.info("Registered new user: {}", saved.getId());
+
+        return UserResponse.from(saved);
     }
 
     @Transactional
-    public User updateUser(UserDTO user) {
-        User convertedUser;
+    public UserResponse updateUser(UpdateUserRequest request) {
+        User user = userRepository.findById(request.id())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        if (userRepository.existsById(user.getId())) {
-            throw new IllegalArgumentException("Email is already registered");
+        if (!user.getUsername().equals(request.username()) && userRepository.existsByUsername(request.username())) {
+            throw new UsernameAlreadyExistsException("Username is already taken");
         }
-        Optional<User> userToUpdate = userRepository.findById(user.getId());
-        if(user.getPassword() != null){
-             convertedUser = objectMapper.convertValue(user, User.class);
-            return userRepository.save(convertedUser);
-        }else{
-            objectMapper.updateValue(userToUpdate.get(), user);
-            userToUpdate.get().setPassword(passwordEncoder.encode(user.getPassword()));
-            return userRepository.save(userToUpdate.get());
+
+        if (!user.getEmail().equals(request.email()) && userRepository.existsByEmail(request.email())) {
+            throw new EmailAlreadyExistsException("Email is already registered");
         }
+
+        user.setUsername(request.username());
+        user.setEmail(request.email());
+        user.setFullName(request.fullName());
+        user.setBio(request.bio());
+
+        if (request.password() != null) {
+            user.setPassword(passwordEncoder.encode(request.password()));
+        }
+
+        User saved = userRepository.save(user);
+
+        log.info("Updated user: {}", saved.getId());
+
+        return UserResponse.from(saved);
     }
 
-    public void deleteUser(@Valid UUID id) {
-        userRepository.deleteById(id);
+    @Transactional
+    public void deleteUser(UUID id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        userRepository.delete(user);
+
+        log.info("Deleted user: {}", id);
     }
 }

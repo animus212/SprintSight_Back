@@ -1,16 +1,17 @@
 package com.example.SprintSight.Services;
 
-import com.example.SprintSight.Entities.User;
 import com.example.SprintSight.Repositories.UserRepository;
 import com.example.SprintSight.Security.UserPrincipal;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -20,9 +21,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     @NonNull
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Invalid username or password"));
+        log.debug("Loading user by username: {}", username);
 
-        return new UserPrincipal(user);
+        return userRepository.findByUsername(username)
+                .map(UserPrincipal::from)
+                .orElseThrow(() -> new UsernameNotFoundException("Invalid username or password"));
     }
 }
