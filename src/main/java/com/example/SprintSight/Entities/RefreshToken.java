@@ -31,9 +31,6 @@ public class RefreshToken {
     private String token;
 
     @Column(nullable = false)
-    private boolean revoked = false;
-
-    @Column(nullable = false)
     private Instant expiryDate;
 
     @CreatedDate
