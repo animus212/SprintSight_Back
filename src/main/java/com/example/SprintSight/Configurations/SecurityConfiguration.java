@@ -5,6 +5,8 @@ import com.example.SprintSight.Security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
@@ -25,18 +27,22 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfiguration {
+    private final Environment environment;
     private final JwtFilter jwtFilter;
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        if (environment.acceptsProfiles(Profiles.of("dev"))) {
+            http.csrf(AbstractHttpConfigurer::disable);
+        }
+
         http
-                .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/singup").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
                         .anyRequest().authenticated()
                 )

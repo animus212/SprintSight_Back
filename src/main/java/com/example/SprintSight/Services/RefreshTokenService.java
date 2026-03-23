@@ -40,6 +40,7 @@ public class RefreshTokenService {
         refreshToken.setUser(user);
         refreshToken.setToken(DigestUtils.sha256Hex(rawToken));
         refreshToken.setExpiryDate(Instant.now().plus(Duration.ofDays(7)));
+        refreshToken.setCreatedAt(Instant.now());
 
         refreshTokenRepository.save(refreshToken);
 
@@ -49,7 +50,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public RefreshToken verifyExpiration(RefreshToken token) {
+    public void verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepository.delete(token);
 
@@ -57,8 +58,6 @@ public class RefreshTokenService {
 
             throw new TokenRefreshException("Refresh token expired. Please log in again.");
         }
-
-        return token;
     }
 
     @Transactional

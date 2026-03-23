@@ -22,8 +22,8 @@ public class UserController {
     private final UserService userService;
 
     @PutMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID id,
-                                                                @Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(SecurityContextHolder
                 .getContext().getAuthentication()).getPrincipal();
 

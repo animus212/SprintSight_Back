@@ -23,8 +23,8 @@ public class JwtService {
     @Value("${SprintSight.app.jwtSecret}")
     private String jwtSecret;
 
-    private final String jwtCookie = "SprintSightJwtCookie";
-    private final String jwtRefreshCookie = "SprintSightJwtRefreshCookie";
+    private static final String jwtCookie = "SprintSightJwtCookie";
+    private static final String jwtRefreshCookie = "SprintSightJwtRefreshCookie";
 
     private final long jwtExpiration = 15 * 60 * 1000;
 

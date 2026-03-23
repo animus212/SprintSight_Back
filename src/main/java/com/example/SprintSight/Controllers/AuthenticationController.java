@@ -14,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,34 +32,19 @@ public class AuthenticationController {
     private final JwtService jwtService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Void>> login(@Valid @RequestBody LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.username(), loginRequest.password())
-        );
+    public ResponseEntity<ApiResponse<UserResponse>> login(@Valid @RequestBody LoginRequest request) {
+        UserPrincipal userDetails = authenticate(request.username(), request.password());
+        UserResponse userResponse = userService.getUser(userDetails.getId());
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();
-
-        assert userDetails != null;
-        ResponseCookie jwtCookie = jwtService.generateJwtCookie(userDetails);
-
-        ResponseCookie jwtRefreshCookie = jwtService.generateRefreshJwtCookie(
-                refreshTokenService.createRefreshToken(userDetails.getId())
-        );
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, jwtRefreshCookie.toString())
-                .body(new ApiResponse<>("Logged in successfully", null));
+        return buildAuthResponse(userDetails, userResponse, "Logged in successfully");
     }
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<UserResponse>> signup(@Valid @RequestBody RegisterRequest request) {
         UserResponse userResponse = userService.addUser(request);
+        UserPrincipal userDetails = authenticate(request.username(), request.password());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>("User registered successfully", userResponse));
+        return buildAuthResponse(userDetails, userResponse, "User registered successfully");
     }
 
     @PostMapping("/logout")
@@ -98,5 +82,29 @@ public class AuthenticationController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .body(new ApiResponse<>("Token refreshed successfully", null));
+    }
+
+    private UserPrincipal authenticate(String username, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        return (UserPrincipal) authentication.getPrincipal();
+    }
+
+    private ResponseEntity<ApiResponse<UserResponse>> buildAuthResponse(
+            UserPrincipal userDetails, UserResponse userResponse, String message) {
+        ResponseCookie jwtCookie = jwtService.generateJwtCookie(userDetails);
+
+        ResponseCookie jwtRefreshCookie = jwtService.generateRefreshJwtCookie(
+                refreshTokenService.createRefreshToken(userDetails.getId())
+        );
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, jwtRefreshCookie.toString())
+                .body(new ApiResponse<>(message, userResponse));
     }
 }

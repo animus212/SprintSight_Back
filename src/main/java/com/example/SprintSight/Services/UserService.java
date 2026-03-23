@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
@@ -20,6 +21,13 @@ import java.util.UUID;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public UserResponse getUser(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        return UserResponse.from(user);
+    }
 
     @Transactional
     public UserResponse addUser(RegisterRequest request) {
@@ -36,6 +44,8 @@ public class UserService {
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setFullName(request.fullName());
+        user.setCreatedAt(Instant.now());
+        user.setUpdatedAt(Instant.now());
 
         User saved = userRepository.save(user);
 
@@ -61,6 +71,7 @@ public class UserService {
         user.setEmail(request.email());
         user.setFullName(request.fullName());
         user.setBio(request.bio());
+        user.setUpdatedAt(Instant.now());
 
         if (request.password() != null) {
             user.setPassword(passwordEncoder.encode(request.password()));
