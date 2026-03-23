@@ -10,10 +10,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
-    Optional<RefreshToken> findByTokenAndRevokedFalse(String token);
-    List<RefreshToken> findByUserIdAndRevokedFalse(UUID userId);
+    Optional<RefreshToken> findByToken(String token);
+    List<RefreshToken> findByUserId(UUID userId);
 
     @Modifying
     @Transactional
-    int deleteByUserId(UUID userId);
+    void deleteByUserId(UUID userId);
 }

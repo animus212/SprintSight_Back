@@ -25,7 +25,7 @@ public class RefreshTokenService {
 
     @Transactional(readOnly = true)
     public RefreshToken findByToken(String rawToken) {
-        return refreshTokenRepository.findByTokenAndRevokedFalse(DigestUtils.sha256Hex(rawToken))
+        return refreshTokenRepository.findByToken(DigestUtils.sha256Hex(rawToken))
                 .orElseThrow(() -> new TokenRefreshException("Invalid or expired refresh token"));
     }
 
