@@ -1,18 +1,18 @@
 package com.example.SprintSight.Controllers;
 
-import com.example.SprintSight.DTOs.ApiResponse;
-import com.example.SprintSight.DTOs.LoginDTO;
-import com.example.SprintSight.DTOs.UserDTO;
-import com.example.SprintSight.Entities.User;
-import com.example.SprintSight.Services.JWTService;
+import com.example.SprintSight.Payloads.Requests.UpdateUserRequest;
+import com.example.SprintSight.Payloads.Responses.ApiResponse;
+import com.example.SprintSight.Payloads.Responses.UserResponse;
+import com.example.SprintSight.Security.UserPrincipal;
 import com.example.SprintSight.Services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -20,48 +20,35 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    private final AuthenticationManager authenticationManager;
-    private final JWTService jwtService;
 
-    @PostMapping("/users")
-    public ResponseEntity<ApiResponse<String>> addUser(@Valid @RequestBody User user) {
-        user = userService.AddUser(user);
+    @PutMapping("/users/{id}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID id,
+                                                                @Valid @RequestBody UpdateUserRequest request) {
+        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(SecurityContextHolder
+                .getContext().getAuthentication()).getPrincipal();
 
-        String jwtToken = jwtService.generateToken(user.getUsername());
+        assert principal != null;
+        if (!principal.getId().equals(id)) {
+            throw new AccessDeniedException("You can only update your own account");
+        }
 
-        return ResponseEntity.ok(
-                new ApiResponse<>("User added", jwtToken)
-        );
-    }
+        UserResponse updatedUser = userService.updateUser(request);
 
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(@Valid @RequestBody LoginDTO loginDTO) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword())
-        );
-
-        String jwtToken = jwtService.generateToken(loginDTO.getUsername());
-
-        return ResponseEntity.ok(
-                new ApiResponse<>("Login successful", jwtToken)
-        );
-    }
-
-    @PutMapping("/users")
-    public ResponseEntity<ApiResponse<User>> updateUser(@Valid @RequestBody UserDTO userDTO) {
-        User updatedUser = userService.updateUser(userDTO);
-
-        return ResponseEntity.ok(
-                new ApiResponse<>("User updated", updatedUser)
-        );
+        return ResponseEntity.ok(new ApiResponse<>("User updated successfully", updatedUser));
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<Object>> deleteUser(@PathVariable @Valid @RequestParam UUID id){
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
+        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(SecurityContextHolder
+                .getContext().getAuthentication()).getPrincipal();
+
+        assert principal != null;
+        if (!principal.getId().equals(id)) {
+            throw new AccessDeniedException("You can only delete your own account");
+        }
+
         userService.deleteUser(id);
 
-        return ResponseEntity.ok(
-                new ApiResponse<>("User deleted", null)
-        );
+        return ResponseEntity.noContent().build();
     }
 }

@@ -62,6 +62,13 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    public void deleteToken(RefreshToken token) {
+        refreshTokenRepository.delete(token);
+
+        log.info("Deleted refresh token for user: {}", token.getUser().getId());
+    }
+
+    @Transactional
     public void deleteByUserId(UUID userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }
