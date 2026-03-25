@@ -58,15 +58,16 @@ public class SecurityConfiguration {
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(unauthorizedHandler)
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        .authenticationEntryPoint(unauthorizedHandler)
+                        .accessDeniedHandler((request, response,
+                                              accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-                    objectMapper.writeValue(response.getOutputStream(),
-                            new ApiError("Forbidden: CSRF token invalid or missing"));
-                })
-        );
+                            objectMapper.writeValue(response.getOutputStream(),
+                                    new ApiError("Forbidden: CSRF token invalid or missing"));
+                        })
+                );
 
         return http.build();
     }
@@ -91,7 +92,8 @@ public class SecurityConfiguration {
                 "Authorization",
                 "Content-Type",
                 "X-Requested-With",
-                "Accept"
+                "Accept",
+                "X-XSRF-TOKEN"
         ));
         configuration.setAllowCredentials(true);
 
