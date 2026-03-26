@@ -2,11 +2,11 @@ package com.example.sprintsight.exceptions;
 
 import java.io.Serial;
 
-public class UsernameAlreadyExistsException extends RuntimeException {
+public class EntityNotFoundException extends RuntimeException {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    public UsernameAlreadyExistsException(String message) {
+    public EntityNotFoundException(String message) {
         super(message);
     }
 }

@@ -3,6 +3,7 @@ package com.example.sprintsight.exceptions;
 import com.example.sprintsight.dtos.responses.ApiError;
 import com.example.sprintsight.dtos.responses.FieldValidationError;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -30,21 +31,9 @@ public class GlobalExceptionHandler {
                 .body(new ApiError(ex.getMessage()));
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiError> handleUserNotFoundException(UserNotFoundException ex) {
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiError> handleUserNotFoundException(EntityNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiError(ex.getMessage()));
-    }
-
-    @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ResponseEntity<ApiError> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiError(ex.getMessage()));
-    }
-
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ApiError> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ApiError(ex.getMessage()));
     }
 
@@ -72,5 +61,29 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError("An unexpected error occurred"));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> handleDataIntegrity(DataIntegrityViolationException ex) {
+        Throwable root = ex.getRootCause();
+
+        if (root != null && root.getMessage() != null) {
+            String msg = root.getMessage();
+
+            if (msg.contains("users_username_key")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Username already exists");
+            }
+
+            if (msg.contains("users_email_key")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Email already exists");
+            }
+
+            log.error("Database constraint violation: {}", msg);
+        }
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("Database constraint violation");
     }
 }

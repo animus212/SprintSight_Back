@@ -1,7 +1,6 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.UpdateUserPatchRequest;
-import com.example.sprintsight.dtos.requests.UpdateUserPutRequest;
+import com.example.sprintsight.dtos.requests.UpdateUserRequest;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.exceptions.*;
 import com.example.sprintsight.dtos.requests.RegisterRequest;
@@ -25,94 +24,51 @@ public class UserService {
     private final UserMapper userMapper;
 
     public UserResponse getUser(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        return userMapper.toUserResponse(user);
+        return userMapper.toUserResponse(findUser(id));
     }
 
     @Transactional
     public UserResponse addUser(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.username())) {
-            throw new UsernameAlreadyExistsException("Username is already taken");
-        }
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new EmailAlreadyExistsException("Email is already registered");
-        }
-
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
 
-        User saved = userRepository.save(user);
-
-        log.info("Registered new user: {}", saved.getId());
-
-        return userMapper.toUserResponse(user);
+        return saveUser(user, "Registered new user");
     }
 
     @Transactional
-    public UserResponse updateUserPut(UpdateUserPutRequest request) {
-        User user = userRepository.findById(request.id())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    public UserResponse updateUser(UpdateUserRequest request, UUID id, boolean isPut) {
+        User user = findUser(id);
 
-        validateUsernameChange(user, request.username());
-
-        validateEmailChange(user, request.email());
-
-        userMapper.updateUserFromPut(request, user);
-
-        if (request.password() != null) {
-            user.setPassword(passwordEncoder.encode(request.password()));
+        if (isPut) {
+            userMapper.updateUserFromPut(request, user);
+        }
+        else {
+            userMapper.updateUserFromPatch(request, user);
         }
 
-        User saved = userRepository.save(user);
+        if (request.password() != null) user.setPassword(passwordEncoder.encode(request.password()));
 
-        log.info("Updated user: {}", saved.getId());
-
-        return userMapper.toUserResponse(saved);
-    }
-
-    @Transactional
-    public UserResponse updateUserPatch(UpdateUserPatchRequest request) {
-        User user = userRepository.findById(request.id())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        validateUsernameChange(user, request.username());
-
-        validateEmailChange(user, request.email());
-
-        userMapper.updateUserFromPatch(request, user);
-
-        if (request.password() != null) {
-            user.setPassword(passwordEncoder.encode(request.password()));
-        }
-
-        return userMapper.toUserResponse(user);
+        return saveUser(user, "Updated user");
     }
 
     @Transactional
     public void deleteUser(UUID id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user = findUser(id);
 
         userRepository.delete(user);
 
         log.info("Deleted user: {}", id);
     }
 
-    private void validateUsernameChange(User user, String newUsername) {
-        if (newUsername == null || user.getUsername().equals(newUsername)) return;
-
-        if (userRepository.existsByUsername(newUsername)) {
-            throw new UsernameAlreadyExistsException("Username already taken");
-        }
+    private User findUser(UUID id) {
+        return userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 
-    private void validateEmailChange(User user, String newEmail) {
-        if (newEmail == null || user.getEmail().equals(newEmail)) return;
+    private UserResponse saveUser(User user, String logMessage) {
+        User savedUser = userRepository.save(user);
 
-        if (userRepository.existsByEmail(newEmail)) {
-            throw new EmailAlreadyExistsException("Email is already registered");
-        }
+        log.info("{}: {}", logMessage, savedUser.getId());
+
+        return userMapper.toUserResponse(savedUser);
     }
 }

@@ -22,12 +22,12 @@ import java.util.UUID;
 @Table(
         name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = "username"),
-                @UniqueConstraint(columnNames = "email")
+                @UniqueConstraint(name = "users_username_key", columnNames = "username"),
+                @UniqueConstraint(name = "users_email_key", columnNames = "email")
         },
         indexes = {
-                @Index(name = "idx_username", columnList = "username"),
-                @Index(name = "idx_email", columnList = "email")
+                @Index(name = "users_username_idx", columnList = "username"),
+                @Index(name = "users_username_idx", columnList = "email")
         }
 )
 public class User {
