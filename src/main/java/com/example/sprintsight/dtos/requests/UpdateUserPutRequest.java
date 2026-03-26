@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 
 import java.util.UUID;
 
-public record UpdateUserRequest(
+public record UpdateUserPutRequest(
         @NotNull(message = "User ID is required")
         UUID id,
 

@@ -1,6 +1,7 @@
 package com.example.sprintsight.controllers;
 
-import com.example.sprintsight.dtos.requests.UpdateUserRequest;
+import com.example.sprintsight.dtos.requests.UpdateUserPatchRequest;
+import com.example.sprintsight.dtos.requests.UpdateUserPutRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
 import com.example.sprintsight.security.UserPrincipal;
@@ -23,24 +24,49 @@ public class UserController {
 
     @PutMapping("/users/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
-            @PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
-        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(SecurityContextHolder
-                .getContext().getAuthentication()).getPrincipal();
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateUserPutRequest request
+    ) {
+        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        ).getPrincipal();
 
         assert principal != null;
         if (!principal.getId().equals(id)) {
             throw new AccessDeniedException("You can only update your own account");
         }
 
-        UserResponse updatedUser = userService.updateUser(request);
+        UserResponse updatedUser = userService.updateUserPut(request);
 
         return ResponseEntity.ok(new ApiResponse<>("User updated successfully", updatedUser));
     }
 
+    @PatchMapping("/users/{id}")
+    public ResponseEntity<ApiResponse<UserResponse>> patchUser(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateUserPatchRequest request
+    ) {
+        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        ).getPrincipal();
+
+        assert principal != null;
+        if (!principal.getId().equals(id)) {
+            throw new AccessDeniedException("You can only update your own account");
+        }
+
+        UserResponse updatedUser = userService.updateUserPatch(request);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>("User updated successfully", updatedUser)
+        );
+    }
+
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
-        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(SecurityContextHolder
-                .getContext().getAuthentication()).getPrincipal();
+        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        ).getPrincipal();
 
         assert principal != null;
         if (!principal.getId().equals(id)) {

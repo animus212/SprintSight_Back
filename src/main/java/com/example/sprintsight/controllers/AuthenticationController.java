@@ -95,7 +95,10 @@ public class AuthenticationController {
     }
 
     private ResponseEntity<ApiResponse<UserResponse>> buildAuthResponse(
-            UserPrincipal userDetails, UserResponse userResponse, String message) {
+            UserPrincipal userDetails,
+            UserResponse userResponse,
+            String message
+    ) {
         ResponseCookie jwtCookie = jwtService.generateJwtCookie(userDetails);
 
         ResponseCookie jwtRefreshCookie = jwtService.generateRefreshJwtCookie(
