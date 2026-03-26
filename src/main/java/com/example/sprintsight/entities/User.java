@@ -61,7 +61,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.USER;
+    private UserRole userRole = UserRole.USER;
 
     @Column(nullable = false)
     private boolean enabled = true;

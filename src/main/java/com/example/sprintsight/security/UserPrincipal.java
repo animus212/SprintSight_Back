@@ -1,6 +1,6 @@
 package com.example.sprintsight.security;
 
-import com.example.sprintsight.entities.Role;
+import com.example.sprintsight.entities.UserRole;
 import com.example.sprintsight.entities.User;
 import lombok.Getter;
 import lombok.NonNull;
@@ -24,14 +24,14 @@ public class UserPrincipal implements UserDetails, Serializable {
     private final UUID id;
     private final String username;
     private final String password;
-    private final Role role;
+    private final UserRole userRole;
     private final boolean enabled;
 
-    private UserPrincipal(UUID id, String username, String password, Role role, boolean enabled) {
+    private UserPrincipal(UUID id, String username, String password, UserRole userRole, boolean enabled) {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.role = role;
+        this.userRole = userRole;
         this.enabled = enabled;
     }
 
@@ -40,7 +40,7 @@ public class UserPrincipal implements UserDetails, Serializable {
                 user.getId(),
                 user.getUsername(),
                 user.getPassword(),
-                user.getRole(),
+                user.getUserRole(),
                 user.isEnabled()
         );
     }
@@ -48,7 +48,7 @@ public class UserPrincipal implements UserDetails, Serializable {
     @Override
     @NonNull
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + userRole.name()));
     }
 
     @Override

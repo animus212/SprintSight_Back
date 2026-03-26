@@ -1,6 +1,6 @@
 package com.example.sprintsight.entities;
 
-public enum Role {
+public enum UserRole {
     USER,
     ADMIN
 }
