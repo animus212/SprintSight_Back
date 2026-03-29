@@ -22,6 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final RefreshTokenService refreshTokenService;
 
     public UserResponse getUser(UUID id) {
         return userMapper.toUserResponse(findUser(id));
@@ -46,7 +47,11 @@ public class UserService {
             userMapper.updateUserFromPatch(request, user);
         }
 
-        if (request.password() != null) user.setPassword(passwordEncoder.encode(request.password()));
+        if (request.password() != null) {
+            user.setPassword(passwordEncoder.encode(request.password()));
+
+            refreshTokenService.deleteByUserId(id);
+        }
 
         return saveUser(user, "Updated user");
     }
