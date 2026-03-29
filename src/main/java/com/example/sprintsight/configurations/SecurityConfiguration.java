@@ -50,7 +50,7 @@ public class SecurityConfiguration {
                 cookieCsrfTokenRepository.setCookieCustomizer(cookie -> cookie
                         .sameSite("None")
                         .secure(true)
-                        .path("/api")
+                        .path("/")
                 );
 
                 csrf.csrfTokenRepository(cookieCsrfTokenRepository);
