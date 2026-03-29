@@ -3,7 +3,7 @@ package com.example.sprintsight.services;
 import com.example.sprintsight.entities.RefreshToken;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.exceptions.TokenRefreshException;
-import com.example.sprintsight.exceptions.UserNotFoundException;
+import com.example.sprintsight.exceptions.EntityNotFoundException;
 import com.example.sprintsight.repositories.RefreshTokenRepository;
 import com.example.sprintsight.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +31,7 @@ public class RefreshTokenService {
 
     @Transactional
     public String createRefreshToken(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         String rawToken = UUID.randomUUID().toString();
 
