@@ -47,10 +47,12 @@ public class SecurityConfiguration {
                 csrf.spa();
 
                 CookieCsrfTokenRepository cookieCsrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+
+                cookieCsrfTokenRepository.setCookiePath("/");
+
                 cookieCsrfTokenRepository.setCookieCustomizer(cookie -> cookie
                         .sameSite("None")
                         .secure(true)
-                        .path("/api")
                 );
 
                 csrf.csrfTokenRepository(cookieCsrfTokenRepository);
