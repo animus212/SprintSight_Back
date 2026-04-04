@@ -41,19 +41,21 @@ public class ProjectMemberController {
         Invitation invitation = new Invitation(
                 request, projectId,senderId,project.name(),"you have been invited to this project", InvitationStatus.PENDING
         );
+        UserResponse user = userService.getUser(request.userId());
 
-        messagingTemplate.convertAndSendToUser(request.userId().toString(), "/queue/messages", invitation);
+        messagingTemplate.convertAndSendToUser(user.username(), "/queue/messages", invitation);
 
         return ResponseEntity.ok(new ApiResponse<>("invitation sent successfully", null));
     }
 
     @PostMapping("/invitationResponse")
     public void invitationRsponse(@RequestBody Invitation invitation){
+        UserResponse user = userService.getUser(invitation.senderId());
         if(invitation.status() == InvitationStatus.ACCEPTED){
             projectMemberService.addProjectMember(invitation.projectMemberRequest(),invitation.projectId());
-            messagingTemplate.convertAndSendToUser(invitation.senderId().toString(), "/queue/messages", "your invitation has been accepted");
+            messagingTemplate.convertAndSendToUser(user.username(), "/queue/messages", "your invitation has been accepted");
         }else if (invitation.status() == InvitationStatus.REJECTED){
-            messagingTemplate.convertAndSendToUser(invitation.senderId().toString(), "/queue/messages", "your invitation has been rejected");
+            messagingTemplate.convertAndSendToUser(user.username(), "/queue/messages", "your invitation has been rejected");
         }
     }
 
