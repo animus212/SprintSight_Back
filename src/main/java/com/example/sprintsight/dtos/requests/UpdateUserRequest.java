@@ -1,12 +1,7 @@
 package com.example.sprintsight.dtos.requests;
 
 import com.example.sprintsight.dtos.validation.ValidationGroups;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import org.openapitools.jackson.nullable.JsonNullable;
-
+import jakarta.validation.constraints.*;
 
 public record UpdateUserRequest(
         @NotBlank(message = "Username is required", groups = ValidationGroups.Put.class)
@@ -29,8 +24,8 @@ public record UpdateUserRequest(
         String password,        // Optional — only provided when user wants to change password
 
         @Size(max = 100, message = "Full name must not exceed 100 characters")
-        JsonNullable<String> fullName,
+        String fullName,
 
         @Size(max = 500, message = "Bio must not exceed 500 characters")
-        JsonNullable<String> bio
+        String bio
 ) {}
