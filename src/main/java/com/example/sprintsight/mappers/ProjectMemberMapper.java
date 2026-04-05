@@ -1,21 +1,19 @@
 package com.example.sprintsight.mappers;
 
-import com.example.sprintsight.dtos.requests.SendInvitationRequest;
 import com.example.sprintsight.dtos.requests.UpdateProjectMemberRequest;
 import com.example.sprintsight.dtos.responses.ProjectMemberResponse;
 import com.example.sprintsight.entities.ProjectMember;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
+@Mapper(componentModel = "spring", uses = UserMapper.class)
 public interface ProjectMemberMapper {
+    @Mapping(target = "member", source = "user")
+    ProjectMemberResponse toProjectMemberResponse(ProjectMember projectMember);
 
-    ProjectMember toEntity(SendInvitationRequest request);
-
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    @Mapping(target = "joinedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateProjectMemberFromPatch(UpdateProjectMemberRequest request, @MappingTarget ProjectMember projectMember);
-
-    ProjectMemberResponse toProjectMemberResponse(ProjectMember savedProject);
-
-    void updateProjectMemberFromPut(UpdateProjectMemberRequest request, ProjectMember projectMember);
 }
