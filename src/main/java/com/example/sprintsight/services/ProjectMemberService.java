@@ -1,6 +1,6 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.AddProjectMemberRequest;
+import com.example.sprintsight.dtos.requests.SendInvitationRequest;
 import com.example.sprintsight.dtos.requests.UpdateProjectMemberRequest;
 import com.example.sprintsight.dtos.responses.ProjectMemberResponse;
 import com.example.sprintsight.entities.ProjectMember;
@@ -28,7 +28,7 @@ public class ProjectMemberService {
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectMemberMapper projectMemberMapper;
     @Transactional
-    public ProjectMemberResponse addProjectMember(AddProjectMemberRequest request, UUID projectId) {
+    public ProjectMemberResponse addProjectMember(SendInvitationRequest request, UUID projectId) {
         UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(
                 SecurityContextHolder.getContext().getAuthentication()
         ).getPrincipal();

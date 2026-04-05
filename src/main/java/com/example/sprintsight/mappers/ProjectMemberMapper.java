@@ -1,6 +1,6 @@
 package com.example.sprintsight.mappers;
 
-import com.example.sprintsight.dtos.requests.AddProjectMemberRequest;
+import com.example.sprintsight.dtos.requests.SendInvitationRequest;
 import com.example.sprintsight.dtos.requests.UpdateProjectMemberRequest;
 import com.example.sprintsight.dtos.responses.ProjectMemberResponse;
 import com.example.sprintsight.entities.ProjectMember;
@@ -10,7 +10,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 
 public interface ProjectMemberMapper {
 
-    ProjectMember toEntity(AddProjectMemberRequest request);
+    ProjectMember toEntity(SendInvitationRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateProjectMemberFromPatch(UpdateProjectMemberRequest request, @MappingTarget ProjectMember projectMember);

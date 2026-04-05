@@ -1,7 +1,6 @@
 package com.example.sprintsight.controllers;
 
-import com.example.sprintsight.dtos.requests.AddProjectMemberRequest;
-import com.example.sprintsight.dtos.requests.Invitation;
+import com.example.sprintsight.dtos.requests.SendInvitationRequest;
 import com.example.sprintsight.dtos.requests.UpdateProjectMemberRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.ProjectMemberResponse;
@@ -35,7 +34,7 @@ public class ProjectMemberController {
     private final UserService userService;
 
     @PostMapping("/sendInvitation/{projectId}/{senderId}")
-    public ResponseEntity<ApiResponse<Object>> inviteProjectMember(@RequestBody AddProjectMemberRequest request,
+    public ResponseEntity<ApiResponse<Object>> inviteProjectMember(@RequestBody SendInvitationRequest request,
                                                                    @PathVariable UUID projectId,@PathVariable UUID senderId){
         ProjectResponse project = projectService.getProject(projectId);
         Invitation invitation = new Invitation(
