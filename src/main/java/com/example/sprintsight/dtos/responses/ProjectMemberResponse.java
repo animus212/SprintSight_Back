@@ -2,10 +2,10 @@ package com.example.sprintsight.dtos.responses;
 
 import com.example.sprintsight.entities.ProjectRole;
 
-import java.util.UUID;
+import java.time.Instant;
 
-public class ProjectMemberResponse {
-
-    UUID userId;
-    ProjectRole projectRole;
-}
+public record ProjectMemberResponse(
+        UserSummaryResponse member,
+        ProjectRole projectRole,
+        Instant joinedAt
+) {}

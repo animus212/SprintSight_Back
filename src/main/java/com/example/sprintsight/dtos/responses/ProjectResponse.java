@@ -6,5 +6,5 @@ public record ProjectResponse(
         UUID id,
         String name,
         String description,
-        UserResponse createdBy
+        UserSummaryResponse createdBy
 ) {}
