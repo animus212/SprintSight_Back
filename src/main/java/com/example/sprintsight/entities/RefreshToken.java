@@ -16,9 +16,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"user"})
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "refresh_tokens")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Table(name = "refresh_tokens", indexes = { @Index(name = "refresh_tokens_token_idx", columnList = "token") })
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,7 +30,7 @@ public class RefreshToken {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
-    @Column(nullable = false, unique = true)
+    @Column(length = 64, nullable = false, unique = true)
     private String token;
 
     @Column(nullable = false)
