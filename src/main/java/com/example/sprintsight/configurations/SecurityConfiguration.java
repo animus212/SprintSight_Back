@@ -39,7 +39,7 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        if (environment.acceptsProfiles(Profiles.of("dev"))) {
+        if (environment.acceptsProfiles(Profiles.of("dev")) || environment.acceptsProfiles(Profiles.of("test"))) {
             http.csrf(AbstractHttpConfigurer::disable);
         }
         else {
