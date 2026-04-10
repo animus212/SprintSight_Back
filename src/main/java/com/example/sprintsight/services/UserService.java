@@ -1,12 +1,13 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.UpdateUserRequest;
-import com.example.sprintsight.entities.User;
-import com.example.sprintsight.exceptions.*;
 import com.example.sprintsight.dtos.requests.RegisterRequest;
+import com.example.sprintsight.dtos.requests.UpdateUserRequest;
 import com.example.sprintsight.dtos.responses.UserResponse;
+import com.example.sprintsight.entities.User;
 import com.example.sprintsight.mappers.UserMapper;
+import com.example.sprintsight.repositories.ProjectRepository;
 import com.example.sprintsight.repositories.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,11 +20,13 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UserMapper userMapper;
+    private final ProjectRepository projectRepository;
     private final RefreshTokenService refreshTokenService;
 
+    @Transactional(readOnly = true)
     public UserResponse getUser(UUID id) {
         return userMapper.toUserResponse(findUser(id));
     }
@@ -60,12 +63,18 @@ public class UserService {
     public void deleteUser(UUID id) {
         User user = findUser(id);
 
+        if (!projectRepository.findByCreatedBy_Id(id).isEmpty()) {
+            throw new IllegalStateException(
+                    "User owns projects — reassign or delete them before removing this account"
+            );
+        }
+
         userRepository.delete(user);
 
         log.info("Deleted user: {}", id);
     }
 
-    private User findUser(UUID id) {
+    protected User findUser(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 

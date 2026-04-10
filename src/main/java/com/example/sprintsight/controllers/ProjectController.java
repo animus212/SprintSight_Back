@@ -5,10 +5,13 @@ import com.example.sprintsight.dtos.requests.UpdateProjectRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.ProjectResponse;
 import com.example.sprintsight.dtos.validation.ValidationGroups;
+import com.example.sprintsight.security.UserPrincipal;
 import com.example.sprintsight.services.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,56 +19,84 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api")
 @RequiredArgsConstructor
+@RequestMapping(value = "/api/projects", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ProjectController {
     private final ProjectService projectService;
 
-    @GetMapping("/projects/{id}")
-    public ResponseEntity<ApiResponse<ProjectResponse>> getProject(@PathVariable UUID id) {
-        ProjectResponse projectResponse = projectService.getProject(id);
-
-        return ResponseEntity.ok(new ApiResponse<>("Project retrieved successfully", projectResponse));
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProjectResponse>> getProject(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Project retrieved successfully",
+                projectService.getProject(id)
+        ));
     }
 
-    @GetMapping("/projects")
-    public ResponseEntity<ApiResponse<List<ProjectResponse>>> getProjects() {
-        List<ProjectResponse> projectResponse = projectService.getProjects();
-
-        return ResponseEntity.ok(new ApiResponse<>("Projects retrieved successfully", projectResponse));
+    @GetMapping("/owned")
+    public ResponseEntity<ApiResponse<List<ProjectResponse>>> getOwnedProjects(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Projects retrieved successfully",
+                projectService.getOwnedProjects(principal.getId())
+        ));
     }
 
-    @PostMapping("/projects")
-    public ResponseEntity<ApiResponse<ProjectResponse>> addProject(@Valid @RequestBody CreateProjectRequest request) {
-        ProjectResponse projectResponse = projectService.addProject(request);
-
-        return ResponseEntity.ok(new ApiResponse<>("Project created successfully", projectResponse));
+    @GetMapping("/member")
+    public ResponseEntity<ApiResponse<List<ProjectResponse>>> getMemberProjects(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Projects retrieved successfully",
+                projectService.getMemberProjects(principal.getId())
+        ));
     }
 
-    @PutMapping("/projects/{id}")
+    @PostMapping
+    public ResponseEntity<ApiResponse<ProjectResponse>> addProject(
+            @Valid @RequestBody CreateProjectRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Project created successfully",
+                projectService.addProject(request, principal.getId())
+        ));
+    }
+
+    @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectResponse>> putProject(
             @PathVariable UUID id,
-            @Validated(ValidationGroups.Put.class) @RequestBody UpdateProjectRequest request
+            @Validated(ValidationGroups.Put.class) @RequestBody UpdateProjectRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        ProjectResponse updatedProject = projectService.updateProject(request, id, true);
-
-        return ResponseEntity.ok(new ApiResponse<>("Project updated successfully", updatedProject));
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Project updated successfully",
+                projectService.updateProject(request, id, principal.getId(), true)
+        ));
     }
 
-    @PatchMapping("/projects/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectResponse>> patchProject(
             @PathVariable UUID id,
-            @Validated(ValidationGroups.Patch.class) @RequestBody UpdateProjectRequest request
+            @Validated(ValidationGroups.Patch.class) @RequestBody UpdateProjectRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        ProjectResponse updatedProject = projectService.updateProject(request, id, false);
-
-        return ResponseEntity.ok(new ApiResponse<>("Project updated successfully", updatedProject));
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Project updated successfully",
+                projectService.updateProject(request, id, principal.getId(), false)
+        ));
     }
 
-    @DeleteMapping("/projects/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteProject(@PathVariable UUID id) {
-        projectService.deleteProject(id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteProject(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        projectService.deleteProject(id, principal.getId());
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>("Project deleted successfully", null));
     }
 }

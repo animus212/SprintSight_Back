@@ -8,35 +8,36 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"user"})
+@Table(name = "project_members")
 @EntityListeners(AuditingEntityListener.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Table(name = "refresh_tokens", indexes = { @Index(name = "refresh_tokens_token_idx", columnList = "token") })
-public class RefreshToken {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+public class ProjectMember {
+    @EmbeddedId
     @EqualsAndHashCode.Include
-    private UUID id;
+    private ProjectMemberId id;
 
+    @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(length = 64, nullable = false, unique = true)
-    private String token;
+    @MapsId("projectId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
 
     @Column(nullable = false)
-    private Instant expiryDate;
+    @Enumerated(EnumType.STRING)
+    private ProjectRole projectRole = ProjectRole.VIEWER;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+    private Instant joinedAt;
 }

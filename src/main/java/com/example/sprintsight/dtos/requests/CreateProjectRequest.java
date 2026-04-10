@@ -1,6 +1,7 @@
 package com.example.sprintsight.dtos.requests;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateProjectRequest(
@@ -9,5 +10,6 @@ public record CreateProjectRequest(
         String name,
 
         @Size(max = 5000, message = "Description must not exceed 5000 characters")
+        @Pattern(regexp = "^(?!\\s*$).+", message = "Description must not be blank")
         String description
 ) {}

@@ -2,6 +2,7 @@ package com.example.sprintsight.exceptions;
 
 import com.example.sprintsight.dtos.responses.ApiError;
 import com.example.sprintsight.dtos.responses.FieldValidationError;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -43,6 +44,12 @@ public class GlobalExceptionHandler {
                 .body(new ApiError(ex.getMessage()));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalStateException(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
         List<FieldValidationError> errors = ex.getBindingResult()
@@ -72,18 +79,18 @@ public class GlobalExceptionHandler {
 
             if (msg.contains("users_username_key")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("Username already exists");
+                        .body(new ApiError("Username already exists"));
             }
 
             if (msg.contains("users_email_key")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("Email already exists");
+                        .body(new ApiError("Email already exists"));
             }
 
             log.error("Database constraint violation: {}", msg);
         }
 
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body("Database constraint violation");
+                .body(new ApiError("Database constraint violation"));
     }
 }

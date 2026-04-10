@@ -1,8 +1,6 @@
 package com.example.sprintsight.entities;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -17,8 +15,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"password"})
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(AuditingEntityListener.class)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(
         name = "users",
         uniqueConstraints = {
@@ -27,40 +25,32 @@ import java.util.UUID;
         },
         indexes = {
                 @Index(name = "users_username_idx", columnList = "username"),
-                @Index(name = "users_username_idx", columnList = "email")
+                @Index(name = "users_email_idx", columnList = "email")
         }
 )
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank
-    @Size(min = 3, max = 50)
     @Column(length = 50, nullable = false)
     private String username;
 
-    @Column(nullable = false)
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(length = 128, nullable = false)
     private String password;
 
-    @Email
-    @NotBlank
-    @Size(max = 255)
     @Column(nullable = false)
     private String email;
 
-    @Size(max = 100)
     @Column(length = 100)
     private String fullName;
 
-    @Size(max = 500)
     @Column(length = 500)
     private String bio;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private UserRole userRole = UserRole.USER;
 
     @Column(nullable = false)

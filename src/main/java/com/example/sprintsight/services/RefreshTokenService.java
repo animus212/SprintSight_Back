@@ -3,9 +3,7 @@ package com.example.sprintsight.services;
 import com.example.sprintsight.entities.RefreshToken;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.exceptions.TokenRefreshException;
-import com.example.sprintsight.exceptions.EntityNotFoundException;
 import com.example.sprintsight.repositories.RefreshTokenRepository;
-import com.example.sprintsight.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -20,10 +18,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    @Transactional(readOnly = true)
     public RefreshToken findByToken(String rawToken) {
         return refreshTokenRepository.findByToken(DigestUtils.sha256Hex(rawToken))
                 .orElseThrow(() -> new TokenRefreshException("Invalid or expired refresh token"));
@@ -31,7 +28,7 @@ public class RefreshTokenService {
 
     @Transactional
     public String createRefreshToken(UUID userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User user = userService.findUser(userId);
 
         String rawToken = UUID.randomUUID().toString();
 
@@ -39,7 +36,6 @@ public class RefreshTokenService {
         refreshToken.setUser(user);
         refreshToken.setToken(DigestUtils.sha256Hex(rawToken));
         refreshToken.setExpiryDate(Instant.now().plus(Duration.ofDays(7)));
-        refreshToken.setCreatedAt(Instant.now());
 
         refreshTokenRepository.save(refreshToken);
 
@@ -68,6 +64,6 @@ public class RefreshTokenService {
 
     @Transactional
     public void deleteByUserId(UUID userId) {
-        refreshTokenRepository.deleteByUserId(userId);
+        refreshTokenRepository.deleteByUser_Id(userId);
     }
 }

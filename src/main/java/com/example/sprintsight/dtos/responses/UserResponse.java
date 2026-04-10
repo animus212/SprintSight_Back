@@ -2,6 +2,7 @@ package com.example.sprintsight.dtos.responses;
 
 import com.example.sprintsight.entities.UserRole;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record UserResponse(
@@ -10,5 +11,8 @@ public record UserResponse(
         String email,
         String fullName,
         String bio,
-        UserRole userRole
+        UserRole userRole,
+        boolean enabled,
+        Instant createdAt,
+        Instant updatedAt
 ) {}
