@@ -79,18 +79,18 @@ public class GlobalExceptionHandler {
 
             if (msg.contains("users_username_key")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("Username already exists");
+                        .body(new ApiError("Username already exists"));
             }
 
             if (msg.contains("users_email_key")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("Email already exists");
+                        .body(new ApiError("Email already exists"));
             }
 
             log.error("Database constraint violation: {}", msg);
         }
 
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body("Database constraint violation");
+                .body(new ApiError("Database constraint violation"));
     }
 }

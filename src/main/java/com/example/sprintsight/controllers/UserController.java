@@ -44,6 +44,6 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>("User deleted successfully", null));
     }
 }

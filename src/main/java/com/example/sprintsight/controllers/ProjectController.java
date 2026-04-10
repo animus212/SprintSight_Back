@@ -66,6 +66,6 @@ public class ProjectController {
     public ResponseEntity<ApiResponse<Void>> deleteProject(@PathVariable UUID id) {
         projectService.deleteProject(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>("Project deleted successfully", null));
     }
 }
