@@ -1,7 +1,10 @@
 package com.example.sprintsight.dtos.requests;
 
 import com.example.sprintsight.dtos.validation.ValidationGroups;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public record UpdateUserRequest(
         @NotBlank(message = "Username is required", groups = ValidationGroups.Put.class)

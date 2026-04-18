@@ -4,5 +4,6 @@ public final class ValidationGroups {
     private ValidationGroups() {}
 
     public interface Put {}
+    public interface Post {}
     public interface Patch {}
 }

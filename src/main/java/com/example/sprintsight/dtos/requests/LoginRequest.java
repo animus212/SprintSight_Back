@@ -1,6 +1,7 @@
 package com.example.sprintsight.dtos.requests;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record LoginRequest(
         @NotBlank(message = "Username is required")
