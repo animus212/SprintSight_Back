@@ -1,7 +1,6 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.CreateProjectRequest;
-import com.example.sprintsight.dtos.requests.UpdateProjectRequest;
+import com.example.sprintsight.dtos.requests.ProjectRequest;
 import com.example.sprintsight.dtos.responses.ProjectResponse;
 import com.example.sprintsight.entities.Project;
 import com.example.sprintsight.entities.User;
@@ -47,7 +46,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse addProject(CreateProjectRequest request, UUID principalId) {
+    public ProjectResponse addProject(ProjectRequest request, UUID principalId) {
         User user = userService.findUser(principalId);
 
         Project project = projectMapper.toEntity(request);
@@ -57,22 +56,12 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse updateProject(
-            UpdateProjectRequest request,
-            UUID projectId,
-            UUID principalId,
-            boolean isPut
-    ) {
+    public ProjectResponse updateProject(ProjectRequest request, UUID projectId, UUID principalId) {
         Project project = findProject(projectId);
 
         verifyOwnership(project, principalId);
 
-        if (isPut) {
-            projectMapper.updateProjectFromPut(request, project);
-        }
-        else {
-            projectMapper.updateProjectFromPatch(request, project);
-        }
+        projectMapper.updateProjectFromRequest(request, project);
 
         return saveProject(project, "Updated project");
     }

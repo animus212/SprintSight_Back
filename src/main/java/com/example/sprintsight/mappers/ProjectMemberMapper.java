@@ -14,6 +14,5 @@ public interface ProjectMemberMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "project", ignore = true)
     @Mapping(target = "joinedAt", ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateProjectMemberFromPatch(UpdateProjectMemberRequest request, @MappingTarget ProjectMember projectMember);
+    void updateProjectMemberFromRequest(UpdateProjectMemberRequest request, @MappingTarget ProjectMember projectMember);
 }

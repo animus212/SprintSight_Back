@@ -1,10 +1,10 @@
 package com.example.sprintsight.controllers;
 
-import com.example.sprintsight.dtos.requests.CreateIssueRequest;
-import com.example.sprintsight.dtos.requests.UpdateIssueRequest;
+import com.example.sprintsight.dtos.requests.IssueRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.IssueResponse;
 import com.example.sprintsight.dtos.responses.IssueSummaryResponse;
+import com.example.sprintsight.dtos.validation.ValidationGroups;
 import com.example.sprintsight.security.UserPrincipal;
 import com.example.sprintsight.services.IssueService;
 import jakarta.validation.Valid;
@@ -13,14 +13,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(value = "/api/projects/{projectId}/issues",
-        produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/projects/{projectId}/issues", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class IssueController {
     private final IssueService issueService;
@@ -28,7 +28,8 @@ public class IssueController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<IssueSummaryResponse>>> getIssues(
             @PathVariable UUID projectId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Issues retrieved successfully",
                 issueService.getProjectIssues(projectId, principal.getId())));
     }
@@ -37,7 +38,8 @@ public class IssueController {
     public ResponseEntity<ApiResponse<IssueResponse>> getIssue(
             @PathVariable UUID projectId,
             @PathVariable UUID issueId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Issue retrieved successfully",
                 issueService.getIssue(issueId, principal.getId())));
     }
@@ -45,7 +47,7 @@ public class IssueController {
     @PostMapping
     public ResponseEntity<ApiResponse<IssueResponse>> createIssue(
             @PathVariable UUID projectId,
-            @Valid @RequestBody CreateIssueRequest request,
+            @Valid @RequestBody IssueRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
         IssueResponse issue = issueService.createIssue(request, projectId, principal.getId());
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -56,8 +58,9 @@ public class IssueController {
     public ResponseEntity<ApiResponse<IssueResponse>> updateIssue(
             @PathVariable UUID projectId,
             @PathVariable UUID issueId,
-            @Valid @RequestBody UpdateIssueRequest request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @Validated(ValidationGroups.Put.class) @RequestBody IssueRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Issue updated successfully",
                 issueService.updateIssue(request, issueId, principal.getId())));
     }
@@ -66,7 +69,8 @@ public class IssueController {
     public ResponseEntity<ApiResponse<Void>> deleteIssue(
             @PathVariable UUID projectId,
             @PathVariable UUID issueId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         issueService.deleteIssue(issueId, principal.getId());
         return ResponseEntity.ok(new ApiResponse<>("Issue deleted successfully", null));
     }

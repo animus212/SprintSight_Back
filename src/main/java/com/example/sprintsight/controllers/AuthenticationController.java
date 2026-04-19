@@ -1,9 +1,10 @@
 package com.example.sprintsight.controllers;
 
 import com.example.sprintsight.dtos.requests.LoginRequest;
-import com.example.sprintsight.dtos.requests.RegisterRequest;
+import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
+import com.example.sprintsight.dtos.validation.ValidationGroups;
 import com.example.sprintsight.entities.RefreshToken;
 import com.example.sprintsight.exceptions.TokenRefreshException;
 import com.example.sprintsight.security.JwtService;
@@ -22,6 +23,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,7 +48,9 @@ public class AuthenticationController {
 
     @Transactional
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<UserResponse>> signup(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> signup(
+            @Validated(ValidationGroups.Post.class) @RequestBody UserRequest request
+    ) {
         UserResponse userResponse = userService.addUser(request);
         UserPrincipal principal = authenticate(request.username(), request.password());
 

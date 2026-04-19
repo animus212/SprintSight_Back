@@ -1,6 +1,8 @@
 package com.example.sprintsight.dtos.requests;
 
+import com.example.sprintsight.dtos.validation.ValidationGroups;
 import com.example.sprintsight.entities.IssuePriority;
+import com.example.sprintsight.entities.IssueStatus;
 import com.example.sprintsight.entities.IssueType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -10,7 +12,7 @@ import jakarta.validation.constraints.Size;
 import java.util.Set;
 import java.util.UUID;
 
-public record CreateIssueRequest(
+public record IssueRequest(
         @NotBlank(message = "Title is required")
         @Size(max = 255, message = "Title must not exceed 255 characters")
         String title,
@@ -23,6 +25,9 @@ public record CreateIssueRequest(
 
         @NotBlank(message = "Priority is required")
         IssuePriority priority,
+
+        @NotBlank(message = "Status is required", groups = ValidationGroups.Put.class)
+        IssueStatus status,
 
         @Min(value = 0, message = "Story points must be non-negative")
         @Max(value = 100, message = "Story points must not exceed 100")

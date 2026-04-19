@@ -1,7 +1,6 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.RegisterRequest;
-import com.example.sprintsight.dtos.requests.UpdateUserRequest;
+import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.UserResponse;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.mappers.UserMapper;
@@ -32,7 +31,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse addUser(RegisterRequest request) {
+    public UserResponse addUser(UserRequest request) {
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
 
@@ -40,15 +39,10 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse updateUser(UpdateUserRequest request, UUID id, boolean isPut) {
+    public UserResponse updateUser(UserRequest request, UUID id) {
         User user = findUser(id);
 
-        if (isPut) {
-            userMapper.updateUserFromPut(request, user);
-        }
-        else {
-            userMapper.updateUserFromPatch(request, user);
-        }
+        userMapper.updateUserFromRequest(request, user);
 
         if (request.password() != null) {
             user.setPassword(passwordEncoder.encode(request.password()));

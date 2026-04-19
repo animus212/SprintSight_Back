@@ -1,6 +1,6 @@
 package com.example.sprintsight.controllers;
 
-import com.example.sprintsight.dtos.requests.UpdateUserRequest;
+import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
 import com.example.sprintsight.dtos.validation.ValidationGroups;
@@ -39,20 +39,17 @@ public class UserController {
     @PreAuthorize("#principal.id.equals(#id)")
     public ResponseEntity<ApiResponse<UserResponse>> putUser(
             @PathVariable UUID id,
-            @Validated(ValidationGroups.Put.class) @RequestBody UpdateUserRequest request,
+            @Validated(ValidationGroups.Put.class) @RequestBody UserRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return updateUser(id, request, principal, true);
-    }
+        ResponseCookie jwtCookie = jwtService.generateJwtCookie(principal);
 
-    @PutMapping("/{id}")
-    @PreAuthorize("#principal.id.equals(#id)")
-    public ResponseEntity<ApiResponse<UserResponse>> patchUser(
-            @PathVariable UUID id,
-            @Validated(ValidationGroups.Patch.class) @RequestBody UpdateUserRequest request,
-            @AuthenticationPrincipal UserPrincipal principal
-    ) {
-        return updateUser(id, request, principal, false);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(new ApiResponse<>(
+                        "User updated successfully",
+                        userService.updateUser(request, id)
+                ));
     }
 
     @DeleteMapping("/{id}")
@@ -67,21 +64,5 @@ public class UserController {
                 .header(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtCookie().toString())
                 .header(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtRefreshCookie().toString())
                 .body(new ApiResponse<>("User deleted successfully", null));
-    }
-
-    private ResponseEntity<ApiResponse<UserResponse>> updateUser(
-            UUID id,
-            UpdateUserRequest request,
-            UserPrincipal principal,
-            boolean isPut
-    ) {
-        ResponseCookie jwtCookie = jwtService.generateJwtCookie(principal);
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(new ApiResponse<>(
-                        "User updated successfully",
-                        userService.updateUser(request, id, isPut)
-                ));
     }
 }

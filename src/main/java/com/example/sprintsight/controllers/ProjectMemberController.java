@@ -31,7 +31,7 @@ public class ProjectMemberController {
     }
 
     @PreAuthorize("#principal.id.equals(#userId)")
-    @PatchMapping("/{projectId}/members/{userId}")
+    @PutMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ApiResponse<ProjectMemberResponse>> updateProjectMember(
             @PathVariable UUID projectId,
             @PathVariable UUID userId,

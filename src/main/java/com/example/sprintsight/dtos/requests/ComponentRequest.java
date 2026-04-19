@@ -1,11 +1,10 @@
 package com.example.sprintsight.dtos.requests;
 
-import com.example.sprintsight.dtos.validation.ValidationGroups;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record ComponentRequest(
-        @NotBlank(message = "Name is required", groups = { ValidationGroups.Post.class, ValidationGroups.Put.class })
+        @NotBlank(message = "Name is required")
         @Size(max = 100, message = "Name must not exceed 100 characters")
         String name,
 

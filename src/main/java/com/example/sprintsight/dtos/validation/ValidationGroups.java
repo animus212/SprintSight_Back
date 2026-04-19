@@ -5,5 +5,4 @@ public final class ValidationGroups {
 
     public interface Put {}
     public interface Post {}
-    public interface Patch {}
 }

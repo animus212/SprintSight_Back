@@ -1,7 +1,6 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.CreateIssueRequest;
-import com.example.sprintsight.dtos.requests.UpdateIssueRequest;
+import com.example.sprintsight.dtos.requests.IssueRequest;
 import com.example.sprintsight.dtos.responses.IssueResponse;
 import com.example.sprintsight.dtos.responses.IssueSummaryResponse;
 import com.example.sprintsight.entities.*;
@@ -52,7 +51,7 @@ public class IssueService {
 
     @Transactional
     public IssueResponse createIssue(
-            CreateIssueRequest request,
+            IssueRequest request,
             UUID projectId,
             UUID principalId
     ) {
@@ -86,7 +85,7 @@ public class IssueService {
 
     @Transactional
     public IssueResponse updateIssue(
-            UpdateIssueRequest request,
+            IssueRequest request,
             UUID issueId,
             UUID principalId
     ) {
@@ -153,7 +152,7 @@ public class IssueService {
                 .collect(Collectors.toSet());
     }
 
-    private void recordChanges(Issue issue, UpdateIssueRequest request, UUID principalId) {
+    private void recordChanges(Issue issue, IssueRequest request, UUID principalId) {
         User changer = userService.findUser(principalId);
         List<IssueEvent> events = new ArrayList<>();
 

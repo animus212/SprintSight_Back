@@ -66,7 +66,7 @@ public class ProjectMemberService {
     ) {
         ProjectMember projectMember = findProjectMember(userId, projectId);
 
-        projectMemberMapper.updateProjectMemberFromPatch(request, projectMember);
+        projectMemberMapper.updateProjectMemberFromRequest(request, projectMember);
 
         return saveProjectMember(projectMember, "Updated project member");
     }

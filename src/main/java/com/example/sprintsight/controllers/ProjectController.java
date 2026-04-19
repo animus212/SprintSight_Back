@@ -1,7 +1,6 @@
 package com.example.sprintsight.controllers;
 
-import com.example.sprintsight.dtos.requests.CreateProjectRequest;
-import com.example.sprintsight.dtos.requests.UpdateProjectRequest;
+import com.example.sprintsight.dtos.requests.ProjectRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.ProjectResponse;
 import com.example.sprintsight.dtos.validation.ValidationGroups;
@@ -57,7 +56,7 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> addProject(
-            @Valid @RequestBody CreateProjectRequest request,
+            @Valid @RequestBody ProjectRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(new ApiResponse<>(
@@ -69,24 +68,12 @@ public class ProjectController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectResponse>> putProject(
             @PathVariable UUID id,
-            @Validated(ValidationGroups.Put.class) @RequestBody UpdateProjectRequest request,
+            @Validated(ValidationGroups.Put.class) @RequestBody ProjectRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Project updated successfully",
-                projectService.updateProject(request, id, principal.getId(), true)
-        ));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProjectResponse>> patchProject(
-            @PathVariable UUID id,
-            @Validated(ValidationGroups.Patch.class) @RequestBody UpdateProjectRequest request,
-            @AuthenticationPrincipal UserPrincipal principal
-    ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Project updated successfully",
-                projectService.updateProject(request, id, principal.getId(), false)
+                projectService.updateProject(request, id, principal.getId())
         ));
     }
 

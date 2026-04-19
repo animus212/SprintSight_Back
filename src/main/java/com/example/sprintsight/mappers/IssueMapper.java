@@ -1,7 +1,6 @@
 package com.example.sprintsight.mappers;
 
-import com.example.sprintsight.dtos.requests.CreateIssueRequest;
-import com.example.sprintsight.dtos.requests.UpdateIssueRequest;
+import com.example.sprintsight.dtos.requests.IssueRequest;
 import com.example.sprintsight.dtos.responses.IssueResponse;
 import com.example.sprintsight.dtos.responses.IssueSummaryResponse;
 import com.example.sprintsight.entities.Issue;
@@ -18,7 +17,7 @@ public interface IssueMapper {
     @Mapping(target = "createdAt",  ignore = true)
     @Mapping(target = "updatedAt",  ignore = true)
     @Mapping(target = "status",     constant = "TODO")
-    Issue toEntity(CreateIssueRequest request);
+    Issue toEntity(IssueRequest request);
 
     @Mapping(target = "id",        ignore = true)
     @Mapping(target = "project",   ignore = true)
@@ -28,7 +27,7 @@ public interface IssueMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateIssueFromRequest(UpdateIssueRequest request, @MappingTarget Issue issue);
+    void updateIssueFromRequest(IssueRequest request, @MappingTarget Issue issue);
 
     @Mapping(target = "project",    source = "project")
     @Mapping(target = "createdBy",  source = "createdBy")
