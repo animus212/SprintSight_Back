@@ -17,7 +17,7 @@ public record IssueResponse(
         IssueStatus status,
         Integer storyPoints,
         String fixVersion,
-        ProjectResponse project,
+        ProjectSummaryResponse project,
         UserSummaryResponse createdBy,
         UserSummaryResponse assignedTo,
         Set<ComponentResponse> components,

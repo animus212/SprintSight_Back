@@ -5,9 +5,7 @@ import com.example.sprintsight.dtos.responses.IssueResponse;
 import com.example.sprintsight.dtos.responses.IssueSummaryResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.mappers.IssueMapper;
-import com.example.sprintsight.repositories.ComponentRepository;
-import com.example.sprintsight.repositories.IssueEventRepository;
-import com.example.sprintsight.repositories.IssueRepository;
+import com.example.sprintsight.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +20,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class IssueService {
+    private final SprintRepository sprintRepository;
+    private final SprintIssueRepository sprintIssueRepository;
     private final IssueRepository issueRepository;
     private final IssueEventRepository issueEventRepository;
     private final ComponentRepository componentRepository;
@@ -37,6 +37,25 @@ public class IssueService {
         authorizationService.getMemberOrThrow(principalId, issue.getProject().getId());
 
         return issueMapper.toIssueResponse(issue);
+    }
+
+    @Transactional(readOnly = true)
+    public List<IssueSummaryResponse> getBacklog(UUID projectId, UUID principalId) {
+        authorizationService.getMemberOrThrow(principalId, projectId);
+
+        List<UUID> activeSprintIssueIds = sprintRepository
+                .findByProject_IdAndStatus(projectId, SprintStatus.ACTIVE)
+                .stream()
+                .flatMap(s -> sprintIssueRepository
+                        .findBySprint_IdAndRemovedAtIsNull(s.getId()).stream())
+                .map(si -> si.getIssue().getId())
+                .toList();
+
+        return issueRepository.findByProject_Id(projectId)
+                .stream()
+                .filter(i -> !activeSprintIssueIds.contains(i.getId()))
+                .map(issueMapper::toIssueSummaryResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)

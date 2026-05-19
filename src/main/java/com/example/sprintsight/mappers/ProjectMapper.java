@@ -2,6 +2,7 @@ package com.example.sprintsight.mappers;
 
 import com.example.sprintsight.dtos.requests.ProjectRequest;
 import com.example.sprintsight.dtos.responses.ProjectResponse;
+import com.example.sprintsight.dtos.responses.ProjectSummaryResponse;
 import com.example.sprintsight.entities.Project;
 import org.mapstruct.*;
 
@@ -20,4 +21,6 @@ public interface ProjectMapper {
     void updateProjectFromRequest(ProjectRequest request, @MappingTarget Project project);
 
     ProjectResponse toProjectResponse(Project project);
+
+    ProjectSummaryResponse toProjectSummaryResponse(Project project);
 }
