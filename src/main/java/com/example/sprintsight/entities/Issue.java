@@ -22,8 +22,7 @@ import java.util.UUID;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "issues", indexes = {
         @Index(name = "issues_project_idx",  columnList = "project_id"),
-        @Index(name = "issues_assignee_idx", columnList = "assigned_to"),
-        @Index(name = "issues_sprint_idx",   columnList = "sprint_id")
+        @Index(name = "issues_assignee_idx", columnList = "assigned_to")
 })
 public class Issue {
     @Id
@@ -39,14 +38,17 @@ public class Issue {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "type_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.RESTRICT)
     private IssueTypeConfiguration type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "priority_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.RESTRICT)
     private IssuePriorityConfiguration priority;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.RESTRICT)
     private IssueStatusConfiguration status;
 
     @Column
@@ -61,7 +63,8 @@ public class Issue {
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false, updatable = false)
+    @JoinColumn(name = "created_by", updatable = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User createdBy;
 
     @JoinColumn(name = "assigned_to")
