@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -13,9 +17,19 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Table(name = "components", indexes = {
-        @Index(name = "components_project_idx", columnList = "project_id")
-})
+@EntityListeners(AuditingEntityListener.class)
+@Table(
+        name = "components",
+        indexes = {
+                @Index(name = "components_project_idx", columnList = "project_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "components_project_name_key",
+                        columnNames = {"project_id", "name"}
+                )
+        }
+)
 public class Component {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,4 +46,12 @@ public class Component {
     @JoinColumn(name = "project_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Project project;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
 }

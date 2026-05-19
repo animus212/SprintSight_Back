@@ -15,9 +15,18 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Table(name = "issue_priority_configs", indexes = {
-        @Index(name = "issue_priority_project_idx", columnList = "project_id")
-})
+@Table(
+        name = "issue_priority_configs",
+        indexes = {
+                @Index(name = "issue_priority_project_idx", columnList = "project_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "issue_priority_project_name_key",
+                        columnNames = {"project_id", "name"}
+                )
+        }
+)
 public class IssuePriorityConfiguration {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -29,8 +38,6 @@ public class IssuePriorityConfiguration {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Project project;
 
-    @NotBlank
-    @Size(max = 50)
     @Column(nullable = false, length = 50)
     private String name;
 

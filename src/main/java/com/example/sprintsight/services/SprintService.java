@@ -78,8 +78,7 @@ public class SprintService {
     public SprintResponse startSprint(StartSprintRequest request, UUID sprintId, UUID principalId) {
         Sprint sprint = findSprint(sprintId);
         UUID projectId = sprint.getProject().getId();
-        authorizationService.requireAnyRole(principalId, projectId,
-                ProjectRole.SCRUM_MASTER);
+        authorizationService.requireAnyRole(principalId, projectId, ProjectRole.SCRUM_MASTER);
 
         if (sprint.getStatus() != SprintStatus.PLANNING) {
             throw new IllegalStateException("Only a sprint in PLANNING can be started");
@@ -119,7 +118,7 @@ public class SprintService {
         sprintIssueRepository.saveAll(activeEntries);
 
         List<SprintIssue> unfinished = activeEntries.stream()
-                .filter(e -> e.getIssue().getStatus() != IssueStatus.DONE)
+                .filter(e -> !e.getStatusAtClosure().isCompleted())
                 .toList();
 
         if (!unfinished.isEmpty()) {
@@ -133,7 +132,7 @@ public class SprintService {
         Sprint saved = sprintRepository.save(sprint);
         log.info("Closed sprint {} — {} issues completed, {} unfinished",
                 sprintId,
-                activeEntries.stream().filter(e -> e.getStatusAtClosure() == IssueStatus.DONE).count(),
+                activeEntries.stream().filter(e -> e.getStatusAtClosure().isCompleted()).count(),
                 unfinished.size());
 
         return buildSprintResponse(saved);
@@ -155,8 +154,7 @@ public class SprintService {
         if (!issue.getProject().getId().equals(sprint.getProject().getId())) {
             throw new IllegalArgumentException("Issue does not belong to this project");
         }
-        if (sprintIssueRepository.existsBySprint_IdAndIssue_IdAndRemovedAtIsNull(
-                sprintId, issueId)) {
+        if (sprintIssueRepository.existsBySprint_IdAndIssue_IdAndRemovedAtIsNull(sprintId, issueId)) {
             throw new IllegalStateException("Issue is already in this sprint");
         }
 
@@ -181,8 +179,7 @@ public class SprintService {
 
         SprintIssue entry = sprintIssueRepository
                 .findBySprint_IdAndIssue_IdAndRemovedAtIsNull(sprintId, issueId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Issue is not currently in this sprint"));
+                .orElseThrow(() -> new EntityNotFoundException("Issue is not currently in this sprint"));
 
         entry.setRemovedAt(Instant.now());
         sprintIssueRepository.save(entry);
@@ -201,20 +198,20 @@ public class SprintService {
             Sprint targetSprint = findSprint(targetSprintId);
 
             if (!targetSprint.getProject().getId().equals(projectId)) {
-                throw new IllegalArgumentException(
-                        "Target sprint does not belong to this project");
+                throw new IllegalArgumentException("Target sprint does not belong to this project");
             }
             if (targetSprint.getStatus() == SprintStatus.COMPLETED) {
                 throw new IllegalStateException("Cannot move issues to a completed sprint");
             }
 
-            for (SprintIssue entry : unfinished) {
+            List<SprintIssue> newEntries = unfinished.stream().map(entry -> {
                 SprintIssue newEntry = new SprintIssue();
                 newEntry.setSprint(targetSprint);
                 newEntry.setIssue(entry.getIssue());
-                sprintIssueRepository.save(newEntry);
-            }
+                return newEntry;
+            }).toList();
 
+            sprintIssueRepository.saveAll(newEntries);
             log.info("Moved {} unfinished issues to sprint {}", unfinished.size(), targetSprintId);
         } else {
             log.info("{} unfinished issues moved to backlog", unfinished.size());
@@ -222,8 +219,7 @@ public class SprintService {
     }
 
     private SprintResponse buildSprintResponse(Sprint sprint) {
-        List<SprintIssue> allEntries =
-                sprintIssueRepository.findBySprint_Id(sprint.getId());
+        List<SprintIssue> allEntries = sprintIssueRepository.findBySprint_Id(sprint.getId());
 
         List<SprintIssueResponse> issueResponses = allEntries.stream()
                 .map(e -> toSprintIssueResponse(e, sprint))
@@ -233,11 +229,9 @@ public class SprintService {
                 .filter(r -> r.removedAt() == null)
                 .toList();
 
-        int totalIssues    = activeOnly.size();
-        int completed      = (int) activeOnly.stream()
-                .filter(SprintIssueResponse::completedInSprint).count();
-        int addedAfterStart = (int) activeOnly.stream()
-                .filter(SprintIssueResponse::addedAfterStart).count();
+        int totalIssues     = activeOnly.size();
+        int completed       = (int) activeOnly.stream().filter(SprintIssueResponse::completedInSprint).count();
+        int addedAfterStart = (int) activeOnly.stream().filter(SprintIssueResponse::addedAfterStart).count();
 
         return new SprintResponse(
                 sprint.getId(),
@@ -260,7 +254,8 @@ public class SprintService {
                 && entry.getAddedAt().isAfter(
                 sprint.getStartDate().atStartOfDay(ZoneOffset.UTC).toInstant());
 
-        boolean completedInSprint = entry.getStatusAtClosure() != null && entry.getStatusAtClosure().isCompleted();
+        boolean completedInSprint = entry.getStatusAtClosure() != null
+                && entry.getStatusAtClosure().isCompleted();
 
         return new SprintIssueResponse(
                 issueMapper.toIssueSummaryResponse(entry.getIssue()),

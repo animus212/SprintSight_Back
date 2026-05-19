@@ -18,9 +18,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Table(name = "comments", indexes = {
-        @Index(name = "comments_issue_idx", columnList = "issue_id")
-})
+@Table(
+        name = "comments",
+        indexes = {
+                @Index(name = "comments_issue_idx", columnList = "issue_id"),
+                @Index(name = "comments_user_idx",  columnList = "user_id")
+        }
+)
 public class Comment {
     @Id
     @EqualsAndHashCode.Include

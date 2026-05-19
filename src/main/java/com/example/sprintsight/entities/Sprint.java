@@ -19,10 +19,19 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "sprints", indexes = {
-        @Index(name = "sprints_project_idx", columnList = "project_id"),
-        @Index(name = "sprints_status_idx",  columnList = "status")
-})
+@Table(
+        name = "sprints",
+        indexes = {
+                @Index(name = "sprints_project_idx", columnList = "project_id"),
+                @Index(name = "sprints_status_idx",  columnList = "status")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "sprints_project_name_key",
+                        columnNames = {"project_id", "name"}
+                )
+        }
+)
 public class Sprint {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

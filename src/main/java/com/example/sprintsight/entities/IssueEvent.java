@@ -17,9 +17,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Table(name = "issue_events", indexes = {
-        @Index(name = "issue_events_issue_idx", columnList = "issue_id")
-})
+@Table(
+        name = "issue_events",
+        indexes = {
+                @Index(name = "issue_events_issue_idx",      columnList = "issue_id"),
+                @Index(name = "issue_events_changed_by_idx", columnList = "changed_by")
+        }
+)
 public class IssueEvent {
     @Id
     @EqualsAndHashCode.Include
@@ -37,7 +41,8 @@ public class IssueEvent {
     private User changedBy;
 
     @Column(nullable = false, length = 50)
-    private String fieldName;
+    @Enumerated(EnumType.STRING)
+    private IssueEventField fieldName;
 
     @Column(columnDefinition = "TEXT")
     private String oldValue;

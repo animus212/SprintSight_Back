@@ -46,5 +46,6 @@ public class SprintIssue {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_at_closure_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private IssueStatusConfiguration statusAtClosure;
 }

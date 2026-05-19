@@ -7,6 +7,7 @@ import com.example.sprintsight.repositories.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,5 +66,15 @@ public class RefreshTokenService {
     @Transactional
     public void deleteByUserId(UUID userId) {
         refreshTokenRepository.deleteByUser_Id(userId);
+    }
+
+    @Scheduled(cron = "${sprintsight.refresh-token.cleanup-cron:0 0 3 * * *}")
+    @Transactional
+    public void deleteExpiredTokens() {
+        Instant now = Instant.now();
+        int deleted = refreshTokenRepository.deleteAllExpired(now);
+        log.info("Expired refresh token cleanup: deleted {} token(s)", deleted);
+
+        log.info("Expired refresh token cleanup running at {}", now);
     }
 }
