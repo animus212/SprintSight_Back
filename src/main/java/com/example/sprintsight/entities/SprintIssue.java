@@ -44,7 +44,7 @@ public class SprintIssue {
     @Column
     private Instant removedAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column
-    private IssueStatus statusAtClosure;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_at_closure_id")
+    private IssueStatusConfiguration statusAtClosure;
 }

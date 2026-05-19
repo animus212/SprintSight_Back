@@ -23,7 +23,6 @@ public interface SprintMapper {
     @Mapping(target = "completedAt", ignore = true)
     @Mapping(target = "createdAt",   ignore = true)
     @Mapping(target = "updatedAt",   ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateSprintFromRequest(SprintRequest request, @MappingTarget Sprint sprint);
 
     SprintSummaryResponse toSprintSummaryResponse(Sprint sprint);

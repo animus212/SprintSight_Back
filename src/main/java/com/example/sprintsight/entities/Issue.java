@@ -37,17 +37,17 @@ public class Issue {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private IssueType type;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "type_id", nullable = false)
+    private IssueTypeConfiguration type;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private IssuePriority priority = IssuePriority.LOW;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "priority_id", nullable = false)
+    private IssuePriorityConfiguration priority;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private IssueStatus status = IssueStatus.TODO;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", nullable = false)
+    private IssueStatusConfiguration status;
 
     @Column
     private Integer storyPoints;

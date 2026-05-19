@@ -260,7 +260,7 @@ public class SprintService {
                 && entry.getAddedAt().isAfter(
                 sprint.getStartDate().atStartOfDay(ZoneOffset.UTC).toInstant());
 
-        boolean completedInSprint = entry.getStatusAtClosure() == IssueStatus.DONE;
+        boolean completedInSprint = entry.getStatusAtClosure() != null && entry.getStatusAtClosure().isCompleted();
 
         return new SprintIssueResponse(
                 issueMapper.toIssueSummaryResponse(entry.getIssue()),

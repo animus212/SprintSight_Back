@@ -28,6 +28,7 @@ public class IssueService {
     private final UserService userService;
     private final ProjectService projectService;
     private final ProjectAuthorizationService authorizationService;
+    private final IssueConfigurationService issueConfigurationService;
     private final IssueMapper issueMapper;
 
     @Transactional(readOnly = true)
@@ -84,6 +85,10 @@ public class IssueService {
         issue.setProject(project);
         issue.setCreatedBy(creator);
 
+        issue.setType(issueConfigurationService.findType(request.typeId(), projectId));
+        issue.setPriority(issueConfigurationService.findPriority(request.priorityId(), projectId));
+        issue.setStatus(issueConfigurationService.getDefaultStatus(projectId));
+
         if (request.assignedTo() != null) {
             authorizationService.requireAnyRole(principalId, projectId, ProjectRole.PRODUCT_OWNER,
                     ProjectRole.SCRUM_MASTER);
@@ -123,16 +128,28 @@ public class IssueService {
         recordChanges(issue, request, principalId);
         issueMapper.updateIssueFromRequest(request, issue);
 
+        if (request.typeId() != null) {
+            issue.setType(issueConfigurationService.findType(request.typeId(), projectId));
+        }
+
+        if (request.priorityId() != null) {
+            if (!isPrivileged) {
+                throw new AccessDeniedException("Only product owners and scrum masters can change priority");
+            }
+
+            issue.setPriority(issueConfigurationService.findPriority(request.priorityId(), projectId));
+        }
+
+        if (request.statusId() != null) {
+            issue.setStatus(issueConfigurationService.findStatus(request.statusId(), projectId));
+        }
+
         if (request.assignedTo() != null) {
             if (!isPrivileged) {
                 throw new AccessDeniedException("Only product owners and scrum masters can assign issues");
             }
 
             issue.setAssignedTo(userService.findUser(request.assignedTo()));
-        }
-
-        if (request.priority() != null && !isPrivileged) {
-            throw new AccessDeniedException("Only product owners and scrum masters can change priority");
         }
 
         if (request.componentIds() != null) {

@@ -21,6 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProjectService {
     private final UserService userService;
+    private final IssueConfigurationService issueConfigurationService;
     private final ProjectMapper projectMapper;
     private final ProjectRepository projectRepository;
 
@@ -52,7 +53,13 @@ public class ProjectService {
         Project project = projectMapper.toEntity(request);
         project.setCreatedBy(user);
 
-        return saveProject(project, "Create project");
+        Project saved = projectRepository.save(project);
+
+        issueConfigurationService.seedDefaults(saved);
+
+        log.info("Created project {}", saved.getId());
+
+        return projectMapper.toProjectResponse(saved);
     }
 
     @Transactional

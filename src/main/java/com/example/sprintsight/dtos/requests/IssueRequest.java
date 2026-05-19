@@ -1,9 +1,6 @@
 package com.example.sprintsight.dtos.requests;
 
 import com.example.sprintsight.dtos.validation.ValidationGroups;
-import com.example.sprintsight.entities.IssuePriority;
-import com.example.sprintsight.entities.IssueStatus;
-import com.example.sprintsight.entities.IssueType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -21,13 +18,13 @@ public record IssueRequest(
         String description,
 
         @NotBlank(message = "Issue type is required")
-        IssueType type,
+        UUID typeId,
 
         @NotBlank(message = "Priority is required")
-        IssuePriority priority,
+        UUID priorityId,
 
         @NotBlank(message = "Status is required", groups = ValidationGroups.Put.class)
-        IssueStatus status,
+        UUID statusId,
 
         @Min(value = 0, message = "Story points must be non-negative")
         @Max(value = 100, message = "Story points must not exceed 100")
