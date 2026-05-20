@@ -1,5 +1,6 @@
 package com.example.sprintsight.dtos.requests;
 
+import com.example.sprintsight.dtos.validation.ValidDateRange;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
+@ValidDateRange
 public record SprintRequest(
         @NotBlank(message = "Sprint name is required")
         @Size(max = 100, message = "Sprint name must not exceed 100 characters")
@@ -18,7 +20,6 @@ public record SprintRequest(
         @NotNull(message = "Start date is required")
         LocalDate startDate,
 
-        @NotNull(message = "End date is required")
         @Future(message = "End date must be in the future")
         LocalDate endDate
 ) {}

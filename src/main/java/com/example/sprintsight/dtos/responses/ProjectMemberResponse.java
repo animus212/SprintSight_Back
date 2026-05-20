@@ -7,5 +7,6 @@ import java.time.Instant;
 public record ProjectMemberResponse(
         UserSummaryResponse member,
         ProjectRole projectRole,
-        Instant joinedAt
+        Instant joinedAt,
+        Instant updatedAt
 ) {}

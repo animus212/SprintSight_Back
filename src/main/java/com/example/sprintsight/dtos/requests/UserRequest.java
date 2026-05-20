@@ -21,11 +21,11 @@ public record UserRequest(
         String email,
 
         @NotBlank(message = "Password is required", groups = ValidationGroups.Post.class)
-        @Size(min = 8, max = 128, message = "Password must be between 8 and 128 characters",
-                groups = ValidationGroups.Post.class)
-        @Pattern(regexp = "^(?=.*\\S).{8,128}$", message = "Password must be 8–128 characters and not blank",
+        @Size(min = 8, max = 128, message = "Password must be between 8 and 128 characters")
+        @Pattern(regexp = "^(?=.*\\S).{8,128}$",
+                message = "Password must be 8–128 characters and not blank",
                 groups = ValidationGroups.Put.class)
-        String password,        // Optional (when updating) — only provided when user wants to change password
+        String password,        // Optional on PUT — null means "do not change"
 
         @Size(max = 100, message = "Full name must not exceed 100 characters")
         @Pattern(regexp = "^(?!\\s*$).+", message = "Full name must not be blank")

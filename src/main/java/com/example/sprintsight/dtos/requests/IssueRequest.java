@@ -1,10 +1,7 @@
 package com.example.sprintsight.dtos.requests;
 
 import com.example.sprintsight.dtos.validation.ValidationGroups;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.util.Set;
 import java.util.UUID;
@@ -17,13 +14,13 @@ public record IssueRequest(
         @Size(max = 10000, message = "Description must not exceed 10000 characters")
         String description,
 
-        @NotBlank(message = "Issue type is required")
+        @NotNull(message = "Issue type is required")
         UUID typeId,
 
-        @NotBlank(message = "Priority is required")
+        @NotNull(message = "Priority is required")
         UUID priorityId,
 
-        @NotBlank(message = "Status is required", groups = ValidationGroups.Put.class)
+        @NotNull(message = "Status is required", groups = ValidationGroups.Put.class)
         UUID statusId,
 
         @Min(value = 0, message = "Story points must be non-negative")
@@ -35,5 +32,6 @@ public record IssueRequest(
 
         UUID assignedTo,
 
+        @Size(max = 50, message = "An issue cannot have more than 50 components")
         Set<UUID> componentIds
 ) {}

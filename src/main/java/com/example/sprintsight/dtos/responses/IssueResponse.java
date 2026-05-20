@@ -1,7 +1,7 @@
 package com.example.sprintsight.dtos.responses;
 
 import java.time.Instant;
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 public record IssueResponse(
@@ -16,7 +16,7 @@ public record IssueResponse(
         ProjectSummaryResponse project,
         UserSummaryResponse createdBy,
         UserSummaryResponse assignedTo,
-        Set<ComponentResponse> components,
+        List<ComponentResponse> components,
         Instant createdAt,
         Instant updatedAt
 ) {}
