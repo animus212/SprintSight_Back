@@ -13,5 +13,5 @@ public interface IssueTypeConfigurationRepository extends JpaRepository<IssueTyp
     List<IssueTypeConfiguration> findByProject_Id(UUID projectId);
     Optional<IssueTypeConfiguration> findByProject_IdAndIsDefaultTrue(UUID projectId);
     boolean existsByNameAndProject_Id(String name, UUID projectId);
-    boolean existsByProject_IdAndIdNot(UUID projectId, UUID excludeId);
+    long countByProject_Id(UUID projectId);
 }

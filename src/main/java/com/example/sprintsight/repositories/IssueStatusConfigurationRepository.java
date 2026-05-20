@@ -14,6 +14,6 @@ public interface IssueStatusConfigurationRepository extends JpaRepository<IssueS
     Optional<IssueStatusConfiguration> findByProject_IdAndIsDefaultTrue(UUID projectId);
     List<IssueStatusConfiguration> findByProject_IdAndIsCompletedTrue(UUID projectId);
     boolean existsByNameAndProject_Id(String name, UUID projectId);
-    boolean existsByProject_IdAndIdNot(UUID projectId, UUID excludeId);
-    boolean existsByProject_IdAndIsCompletedTrue(UUID projectId);
+    long countByProject_Id(UUID projectId);
+    long countByProject_IdAndIsCompletedTrue(UUID projectId);
 }
