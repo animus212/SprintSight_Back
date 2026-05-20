@@ -11,7 +11,10 @@ import com.example.sprintsight.entities.IssueStatusConfiguration;
 import com.example.sprintsight.entities.IssueTypeConfiguration;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR
+)
 public interface IssueConfigurationMapper {
     @Mapping(target = "id",      ignore = true)
     @Mapping(target = "project", ignore = true)
@@ -25,20 +28,19 @@ public interface IssueConfigurationMapper {
     @Mapping(target = "project", ignore = true)
     IssueStatusConfiguration toStatusEntity(IssueStatusRequest request);
 
-    IssueTypeConfigurationResponse toTypeResponse(IssueTypeConfiguration Configuration);
-    IssuePriorityConfigurationResponse toPriorityResponse(IssuePriorityConfiguration Configuration);
-    IssueStatusConfigurationResponse toStatusResponse(IssueStatusConfiguration Configuration);
+    IssueTypeConfigurationResponse toTypeResponse(IssueTypeConfiguration configuration);
+    IssuePriorityConfigurationResponse toPriorityResponse(IssuePriorityConfiguration configuration);
+    IssueStatusConfigurationResponse toStatusResponse(IssueStatusConfiguration configuration);
 
     @Mapping(target = "id",      ignore = true)
     @Mapping(target = "project", ignore = true)
-    void updateTypeFromRequest(IssueTypeRequest request, @MappingTarget IssueTypeConfiguration Configuration);
+    void updateTypeFromRequest(IssueTypeRequest request, @MappingTarget IssueTypeConfiguration configuration);
 
     @Mapping(target = "id",      ignore = true)
     @Mapping(target = "project", ignore = true)
-    void updatePriorityFromRequest(IssuePriorityRequest request,
-                                   @MappingTarget IssuePriorityConfiguration Configuration);
+    void updatePriorityFromRequest(IssuePriorityRequest request, @MappingTarget IssuePriorityConfiguration configuration);
 
     @Mapping(target = "id",      ignore = true)
     @Mapping(target = "project", ignore = true)
-    void updateStatusFromRequest(IssueStatusRequest request, @MappingTarget IssueStatusConfiguration Configuration);
+    void updateStatusFromRequest(IssueStatusRequest request, @MappingTarget IssueStatusConfiguration configuration);
 }

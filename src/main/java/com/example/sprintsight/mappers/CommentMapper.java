@@ -5,7 +5,11 @@ import com.example.sprintsight.dtos.responses.CommentResponse;
 import com.example.sprintsight.entities.Comment;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", uses = {UserMapper.class})
+@Mapper(
+        componentModel = "spring",
+        uses = UserMapper.class,
+        unmappedTargetPolicy = ReportingPolicy.ERROR
+)
 public interface CommentMapper {
     @Mapping(target = "id",        ignore = true)
     @Mapping(target = "issue",     ignore = true)
@@ -19,9 +23,7 @@ public interface CommentMapper {
     @Mapping(target = "author",    ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateCommentFromRequest(CommentRequest request, @MappingTarget Comment comment);
 
-    @Mapping(target = "author", source = "author")
     CommentResponse toCommentResponse(Comment comment);
 }

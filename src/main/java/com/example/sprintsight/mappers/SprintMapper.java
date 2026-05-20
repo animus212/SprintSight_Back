@@ -5,12 +5,16 @@ import com.example.sprintsight.dtos.responses.SprintSummaryResponse;
 import com.example.sprintsight.entities.Sprint;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", uses = {IssueMapper.class, ProjectMapper.class})
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR
+)
 public interface SprintMapper {
     @Mapping(target = "id",          ignore = true)
     @Mapping(target = "project",     ignore = true)
     @Mapping(target = "status",      constant = "PLANNING")
     @Mapping(target = "startDate",   ignore = true)
+    @Mapping(target = "endDate",     ignore = true)
     @Mapping(target = "completedAt", ignore = true)
     @Mapping(target = "createdAt",   ignore = true)
     @Mapping(target = "updatedAt",   ignore = true)
@@ -20,6 +24,7 @@ public interface SprintMapper {
     @Mapping(target = "project",     ignore = true)
     @Mapping(target = "status",      ignore = true)
     @Mapping(target = "startDate",   ignore = true)
+    @Mapping(target = "endDate",     ignore = true)
     @Mapping(target = "completedAt", ignore = true)
     @Mapping(target = "createdAt",   ignore = true)
     @Mapping(target = "updatedAt",   ignore = true)
