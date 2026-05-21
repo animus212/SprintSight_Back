@@ -14,6 +14,7 @@ import java.util.List;
 
 @Mapper(
         componentModel = "spring",
+        uses = IssueConfigurationMapper.class,
         unmappedTargetPolicy = ReportingPolicy.ERROR
 )
 public interface SprintMapper {
