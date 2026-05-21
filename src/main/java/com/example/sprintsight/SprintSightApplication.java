@@ -7,7 +7,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.TimeZone;
 
-@EnableScheduling
 @SpringBootApplication
 public class SprintSightApplication {
 	public static void main(String[] args) {

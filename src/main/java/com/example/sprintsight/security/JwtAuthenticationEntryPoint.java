@@ -23,12 +23,11 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, @NonNull AuthenticationException ex)
             throws IOException {
-        log.warn("Unauthorized access attempt: {}", request.getRequestURI());
+        log.warn("Unauthorized {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        ApiError body = new ApiError("Unauthorized");
-        objectMapper.writeValue(response.getOutputStream(), body);
+        objectMapper.writeValue(response.getOutputStream(), new ApiError("Unauthorized"));
     }
 }
