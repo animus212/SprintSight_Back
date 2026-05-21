@@ -2,15 +2,15 @@ package com.example.sprintsight.exceptions;
 
 import java.io.Serial;
 
-public class TokenRefreshException extends RuntimeException {
+public class ResourceConflictException extends RuntimeException {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    public TokenRefreshException(String message) {
+    public ResourceConflictException(String message) {
         super(message);
     }
 
-    public TokenRefreshException(String message, Throwable cause) {
+    public ResourceConflictException(String message, Throwable cause) {
         super(message, cause);
     }
 }

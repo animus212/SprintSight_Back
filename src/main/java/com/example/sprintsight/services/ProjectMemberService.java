@@ -3,6 +3,7 @@ package com.example.sprintsight.services;
 import com.example.sprintsight.dtos.requests.UpdateProjectMemberRequest;
 import com.example.sprintsight.dtos.responses.ProjectMemberResponse;
 import com.example.sprintsight.entities.*;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.ProjectMemberMapper;
 import com.example.sprintsight.repositories.ProjectMemberRepository;
 import jakarta.persistence.EntityManager;
@@ -42,7 +43,7 @@ public class ProjectMemberService {
     @Transactional
     public void addProjectMember(UUID userId, ProjectRole projectRole, UUID projectId) {
         if (projectMemberRepository.existsById_UserIdAndId_ProjectId(userId, projectId)) {
-            throw new IllegalStateException("User is already a member of this project");
+            throw new ResourceConflictException("User is already a member of this project");
         }
 
         User userRef = entityManager.getReference(User.class, userId);

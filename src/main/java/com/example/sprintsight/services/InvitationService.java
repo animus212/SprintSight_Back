@@ -6,6 +6,7 @@ import com.example.sprintsight.entities.InvitationStatus;
 import com.example.sprintsight.entities.Project;
 import com.example.sprintsight.entities.ProjectInvitation;
 import com.example.sprintsight.entities.User;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.InvitationMapper;
 import com.example.sprintsight.repositories.ProjectInvitationRepository;
 import com.example.sprintsight.repositories.ProjectMemberRepository;
@@ -51,12 +52,12 @@ public class InvitationService {
         Project project = projectService.findProject(projectId);
 
         if (projectMemberRepository.existsById_UserIdAndId_ProjectId(request.receiverId(), projectId)) {
-            throw new IllegalStateException("User is already a member of this project");
+            throw new ResourceConflictException("User is already a member of this project");
         }
 
         if (invitationRepository.existsByProject_IdAndReceiver_IdAndStatus(
                 projectId, request.receiverId(), InvitationStatus.PENDING)) {
-            throw new IllegalStateException("A pending invitation already exists for this user");
+            throw new ResourceConflictException("A pending invitation already exists for this user");
         }
 
         ProjectInvitation invitation = invitationMapper.toEntity(request);
@@ -112,7 +113,7 @@ public class InvitationService {
         }
 
         if (invitation.getStatus() != InvitationStatus.PENDING) {
-            throw new IllegalStateException("Invitation has already been responded to");
+            throw new ResourceConflictException("Invitation has already been responded to");
         }
 
         return invitation;

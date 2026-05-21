@@ -3,6 +3,8 @@ package com.example.sprintsight.services;
 import com.example.sprintsight.dtos.requests.ComponentRequest;
 import com.example.sprintsight.dtos.responses.ComponentResponse;
 import com.example.sprintsight.entities.*;
+import com.example.sprintsight.exceptions.BusinessRuleViolationException;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.ComponentMapper;
 import com.example.sprintsight.repositories.ComponentRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -38,7 +40,7 @@ public class ComponentService {
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
         if (componentRepository.existsByNameAndProject_Id(request.name(), projectId)) {
-            throw new IllegalStateException(
+            throw new ResourceConflictException(
                     "A component named '" + request.name() + "' already exists in this project");
         }
 
@@ -63,7 +65,7 @@ public class ComponentService {
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
         if (componentRepository.isReferencedByAnyIssue(componentId)) {
-            throw new IllegalStateException(
+            throw new BusinessRuleViolationException(
                     "Cannot delete this component — it is assigned to one or more issues. " +
                             "Remove it from those issues first.");
         }

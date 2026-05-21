@@ -3,6 +3,8 @@ package com.example.sprintsight.services;
 import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.UserResponse;
 import com.example.sprintsight.entities.User;
+import com.example.sprintsight.exceptions.BusinessRuleViolationException;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.UserMapper;
 import com.example.sprintsight.repositories.ProjectRepository;
 import com.example.sprintsight.repositories.UserRepository;
@@ -33,11 +35,11 @@ public class UserService {
     @Transactional
     public UserResponse addUser(UserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new IllegalStateException("Username already taken");
+            throw new ResourceConflictException("Username already taken");
         }
 
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalStateException("Email already registered");
+            throw new ResourceConflictException("Email already registered");
         }
 
         User user = userMapper.toEntity(request);
@@ -57,13 +59,13 @@ public class UserService {
         if (request.username() != null
                 && !request.username().equals(user.getUsername())
                 && userRepository.existsByUsername(request.username())) {
-            throw new IllegalStateException("Username already taken");
+            throw new ResourceConflictException("Username already taken");
         }
 
         if (request.email() != null
                 && !request.email().equals(user.getEmail())
                 && userRepository.existsByEmail(request.email())) {
-            throw new IllegalStateException("Email already registered");
+            throw new ResourceConflictException("Email already registered");
         }
 
         userMapper.updateUserFromRequest(request, user);
@@ -86,7 +88,7 @@ public class UserService {
         User user = findUser(id);
 
         if (!projectRepository.findByCreatedBy_Id(id).isEmpty()) {
-            throw new IllegalStateException(
+            throw new BusinessRuleViolationException(
                     "User owns projects — reassign or delete them before removing this account");
         }
 

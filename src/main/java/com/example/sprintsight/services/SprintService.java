@@ -5,7 +5,8 @@ import com.example.sprintsight.dtos.requests.SprintRequest;
 import com.example.sprintsight.dtos.requests.StartSprintRequest;
 import com.example.sprintsight.dtos.responses.*;
 import com.example.sprintsight.entities.*;
-import com.example.sprintsight.mappers.IssueMapper;
+import com.example.sprintsight.exceptions.BusinessRuleViolationException;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.SprintMapper;
 import com.example.sprintsight.repositories.IssueRepository;
 import com.example.sprintsight.repositories.SprintIssueRepository;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -72,7 +72,7 @@ public class SprintService {
         authorizationService.requireAnyRole(principalId, sprint.getProject().getId(), ProjectRole.SCRUM_MASTER);
 
         if (sprint.getStatus() == SprintStatus.COMPLETED) {
-            throw new IllegalStateException("Cannot update a completed sprint");
+            throw new BusinessRuleViolationException("Cannot update a completed sprint");
         }
 
         sprintMapper.updateSprintFromRequest(request, sprint);
@@ -88,11 +88,11 @@ public class SprintService {
         authorizationService.requireAnyRole(principalId, projectId, ProjectRole.SCRUM_MASTER);
 
         if (sprint.getStatus() != SprintStatus.PLANNING) {
-            throw new IllegalStateException("Only a sprint in PLANNING can be started");
+            throw new BusinessRuleViolationException("Only a sprint in PLANNING can be started");
         }
 
         if (sprintRepository.existsByProject_IdAndStatus(projectId, SprintStatus.ACTIVE)) {
-            throw new IllegalStateException(
+            throw new ResourceConflictException(
                     "A sprint is already active in this project — complete it before starting another");
         }
 
@@ -114,7 +114,7 @@ public class SprintService {
         authorizationService.requireAnyRole(principalId, sprint.getProject().getId(), ProjectRole.SCRUM_MASTER);
 
         if (sprint.getStatus() != SprintStatus.ACTIVE) {
-            throw new IllegalStateException("Only an active sprint can be closed");
+            throw new BusinessRuleViolationException("Only an active sprint can be closed");
         }
 
         List<SprintIssue> activeEntries = sprintIssueRepository.findBySprint_IdAndRemovedAtIsNull(sprintId);
@@ -153,7 +153,7 @@ public class SprintService {
                 ProjectRole.SCRUM_MASTER, ProjectRole.PRODUCT_OWNER);
 
         if (sprint.getStatus() == SprintStatus.COMPLETED) {
-            throw new IllegalStateException("Cannot add issues to a completed sprint");
+            throw new BusinessRuleViolationException("Cannot add issues to a completed sprint");
         }
 
         Issue issue = issueRepository.findById(issueId)
@@ -164,7 +164,7 @@ public class SprintService {
         }
 
         if (sprintIssueRepository.existsBySprint_IdAndIssue_IdAndRemovedAtIsNull(sprintId, issueId)) {
-            throw new IllegalStateException("Issue is already in this sprint");
+            throw new ResourceConflictException("Issue is already in this sprint");
         }
 
         SprintIssue entry = new SprintIssue();
@@ -186,7 +186,7 @@ public class SprintService {
                 ProjectRole.SCRUM_MASTER, ProjectRole.PRODUCT_OWNER);
 
         if (sprint.getStatus() == SprintStatus.COMPLETED) {
-            throw new IllegalStateException("Cannot remove issues from a completed sprint");
+            throw new BusinessRuleViolationException("Cannot remove issues from a completed sprint");
         }
 
         SprintIssue entry = sprintIssueRepository.findBySprint_IdAndIssue_IdAndRemovedAtIsNull(sprintId, issueId)
@@ -222,7 +222,7 @@ public class SprintService {
         }
 
         if (targetSprint.getStatus() == SprintStatus.COMPLETED) {
-            throw new IllegalStateException("Cannot move issues to a completed sprint");
+            throw new BusinessRuleViolationException("Cannot move issues to a completed sprint");
         }
 
         List<SprintIssue> newEntries = unfinished.stream().map(entry -> {

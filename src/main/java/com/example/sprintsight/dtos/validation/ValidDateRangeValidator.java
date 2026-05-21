@@ -1,5 +1,6 @@
 package com.example.sprintsight.dtos.validation;
 
+import com.example.sprintsight.exceptions.BusinessRuleViolationException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -33,7 +34,8 @@ public class ValidDateRangeValidator implements ConstraintValidator<ValidDateRan
 
             return end.isAfter(start);
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("ValidDateRange could not access fields " + startField + "/" + endField, e);
+            throw new BusinessRuleViolationException(
+                    "ValidDateRange could not access fields " + startField + "/" + endField, e);
         }
     }
 }

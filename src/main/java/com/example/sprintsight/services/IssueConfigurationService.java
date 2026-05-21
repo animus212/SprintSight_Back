@@ -7,6 +7,8 @@ import com.example.sprintsight.dtos.responses.IssuePriorityConfigurationResponse
 import com.example.sprintsight.dtos.responses.IssueStatusConfigurationResponse;
 import com.example.sprintsight.dtos.responses.IssueTypeConfigurationResponse;
 import com.example.sprintsight.entities.*;
+import com.example.sprintsight.exceptions.BusinessRuleViolationException;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.IssueConfigurationMapper;
 import com.example.sprintsight.repositories.IssuePriorityConfigurationRepository;
 import com.example.sprintsight.repositories.IssueRepository;
@@ -49,7 +51,7 @@ public class IssueConfigurationService {
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
         if (typeRepository.existsByNameAndProject_Id(request.name(), projectId)) {
-            throw new IllegalStateException("A type named '" + request.name() + "' already exists");
+            throw new ResourceConflictException("A type named '" + request.name() + "' already exists");
         }
 
         if (request.isDefault()) {
@@ -78,7 +80,7 @@ public class IssueConfigurationService {
         if (request.name() != null
                 && !configuration.getName().equals(request.name())
                 && typeRepository.existsByNameAndProject_Id(request.name(), projectId)) {
-            throw new IllegalStateException("A type named '" + request.name() + "' already exists");
+            throw new ResourceConflictException("A type named '" + request.name() + "' already exists");
         }
 
         if (request.isDefault() && !configuration.isDefault()) {
@@ -98,11 +100,11 @@ public class IssueConfigurationService {
         IssueTypeConfiguration configuration = findType(typeId, projectId);
 
         if (typeRepository.countByProject_Id(projectId) <= 1) {
-            throw new IllegalStateException("Cannot delete the only issue type in this project");
+            throw new BusinessRuleViolationException("Cannot delete the only issue type in this project");
         }
 
         if (issueRepository.existsByType_Id(typeId)) {
-            throw new IllegalStateException("Cannot delete a type that is in use — reassign issues first");
+            throw new BusinessRuleViolationException("Cannot delete a type that is in use — reassign issues first");
         }
 
         typeRepository.delete(configuration);
@@ -130,7 +132,7 @@ public class IssueConfigurationService {
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
         if (priorityRepository.existsByNameAndProject_Id(request.name(), projectId)) {
-            throw new IllegalStateException("A priority named '" + request.name() + "' already exists");
+            throw new ResourceConflictException("A priority named '" + request.name() + "' already exists");
         }
 
         if (request.isDefault()) {
@@ -159,7 +161,7 @@ public class IssueConfigurationService {
         if (request.name() != null
                 && !configuration.getName().equals(request.name())
                 && priorityRepository.existsByNameAndProject_Id(request.name(), projectId)) {
-            throw new IllegalStateException("A priority named '" + request.name() + "' already exists");
+            throw new ResourceConflictException("A priority named '" + request.name() + "' already exists");
         }
 
         if (request.isDefault() && !configuration.isDefault()) {
@@ -179,11 +181,11 @@ public class IssueConfigurationService {
         IssuePriorityConfiguration configuration = findPriority(priorityId, projectId);
 
         if (priorityRepository.countByProject_Id(projectId) <= 1) {
-            throw new IllegalStateException("Cannot delete the only priority in this project");
+            throw new BusinessRuleViolationException("Cannot delete the only priority in this project");
         }
 
         if (issueRepository.existsByPriority_Id(priorityId)) {
-            throw new IllegalStateException("Cannot delete a priority that is in use — reassign issues first");
+            throw new BusinessRuleViolationException("Cannot delete a priority that is in use — reassign issues first");
         }
 
         priorityRepository.delete(configuration);
@@ -211,7 +213,7 @@ public class IssueConfigurationService {
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
         if (statusRepository.existsByNameAndProject_Id(request.name(), projectId)) {
-            throw new IllegalStateException("A status named '" + request.name() + "' already exists");
+            throw new ResourceConflictException("A status named '" + request.name() + "' already exists");
         }
 
         if (request.isDefault()) {
@@ -240,12 +242,12 @@ public class IssueConfigurationService {
         if (request.name() != null
                 && !configuration.getName().equals(request.name())
                 && statusRepository.existsByNameAndProject_Id(request.name(), projectId)) {
-            throw new IllegalStateException("A status named '" + request.name() + "' already exists");
+            throw new ResourceConflictException("A status named '" + request.name() + "' already exists");
         }
 
         if (!request.isCompleted() && configuration.isCompleted()
                 && statusRepository.countByProject_IdAndIsCompletedTrue(projectId) <= 1) {
-            throw new IllegalStateException(
+            throw new BusinessRuleViolationException(
                     "At least one status must be marked as completed for sprint closure to work");
         }
 
@@ -266,17 +268,17 @@ public class IssueConfigurationService {
         IssueStatusConfiguration configuration = findStatus(statusId, projectId);
 
         if (statusRepository.countByProject_Id(projectId) <= 1) {
-            throw new IllegalStateException("Cannot delete the only status in this project");
+            throw new BusinessRuleViolationException("Cannot delete the only status in this project");
         }
 
         if (configuration.isCompleted()
                 && statusRepository.countByProject_IdAndIsCompletedTrue(projectId) <= 1) {
-            throw new IllegalStateException(
+            throw new BusinessRuleViolationException(
                     "Cannot delete the last completed status — sprint closure requires at least one");
         }
 
         if (issueRepository.existsByStatus_Id(statusId)) {
-            throw new IllegalStateException(
+            throw new BusinessRuleViolationException(
                     "Cannot delete a status that is in use — move issues to another status first");
         }
 
@@ -289,19 +291,19 @@ public class IssueConfigurationService {
 
     public IssueTypeConfiguration getDefaultType(UUID projectId) {
         return typeRepository.findByProject_IdAndIsDefaultTrue(projectId)
-                .orElseThrow(() -> new IllegalStateException(
+                .orElseThrow(() -> new BusinessRuleViolationException(
                         "No default issue type configured for this project"));
     }
 
     public IssuePriorityConfiguration getDefaultPriority(UUID projectId) {
         return priorityRepository.findByProject_IdAndIsDefaultTrue(projectId)
-                .orElseThrow(() -> new IllegalStateException(
+                .orElseThrow(() -> new BusinessRuleViolationException(
                         "No default priority configured for this project"));
     }
 
     public IssueStatusConfiguration getDefaultStatus(UUID projectId) {
         return statusRepository.findByProject_IdAndIsDefaultTrue(projectId)
-                .orElseThrow(() -> new IllegalStateException(
+                .orElseThrow(() -> new BusinessRuleViolationException(
                         "No default status configured for this project"));
     }
 
