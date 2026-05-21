@@ -25,6 +25,7 @@ public class ComponentService {
     @Transactional(readOnly = true)
     public List<ComponentResponse> getComponents(UUID projectId, UUID principalId) {
         authorizationService.getMemberOrThrow(principalId, projectId);
+
         return componentRepository.findByProject_Id(projectId)
                 .stream()
                 .map(componentMapper::toComponentResponse)
@@ -42,11 +43,14 @@ public class ComponentService {
         }
 
         Project project = projectService.findProject(projectId);
+
         Component component = componentMapper.toEntity(request);
         component.setProject(project);
 
         Component saved = componentRepository.save(component);
+
         log.info("Created component {} in project {}", saved.getId(), projectId);
+
         return componentMapper.toComponentResponse(saved);
     }
 
@@ -58,7 +62,14 @@ public class ComponentService {
         authorizationService.requireAnyRole(principalId, component.getProject().getId(),
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
+        if (componentRepository.isReferencedByAnyIssue(componentId)) {
+            throw new IllegalStateException(
+                    "Cannot delete this component — it is assigned to one or more issues. " +
+                            "Remove it from those issues first.");
+        }
+
         componentRepository.delete(component);
+
         log.info("Deleted component {}", componentId);
     }
 }

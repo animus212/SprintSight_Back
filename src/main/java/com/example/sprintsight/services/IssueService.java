@@ -6,6 +6,7 @@ import com.example.sprintsight.dtos.responses.IssueSummaryResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.mappers.IssueMapper;
 import com.example.sprintsight.repositories.*;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +21,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class IssueService {
-    private final SprintRepository sprintRepository;
-    private final SprintIssueRepository sprintIssueRepository;
     private final IssueRepository issueRepository;
     private final IssueEventRepository issueEventRepository;
     private final ComponentRepository componentRepository;
@@ -30,10 +29,12 @@ public class IssueService {
     private final ProjectAuthorizationService authorizationService;
     private final IssueConfigurationService issueConfigurationService;
     private final IssueMapper issueMapper;
+    private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public IssueResponse getIssue(UUID issueId, UUID principalId) {
-        Issue issue = findIssue(issueId);
+        Issue issue = issueRepository.findWithDetailsById(issueId)
+                .orElseThrow(() -> new EntityNotFoundException("Issue not found"));
 
         authorizationService.getMemberOrThrow(principalId, issue.getProject().getId());
 
@@ -44,17 +45,8 @@ public class IssueService {
     public List<IssueSummaryResponse> getBacklog(UUID projectId, UUID principalId) {
         authorizationService.getMemberOrThrow(principalId, projectId);
 
-        List<UUID> activeSprintIssueIds = sprintRepository
-                .findByProject_IdAndStatus(projectId, SprintStatus.ACTIVE)
+        return issueRepository.findBacklogByProject_Id(projectId)
                 .stream()
-                .flatMap(s -> sprintIssueRepository
-                        .findBySprint_IdAndRemovedAtIsNull(s.getId()).stream())
-                .map(si -> si.getIssue().getId())
-                .toList();
-
-        return issueRepository.findByProject_Id(projectId)
-                .stream()
-                .filter(i -> !activeSprintIssueIds.contains(i.getId()))
                 .map(issueMapper::toIssueSummaryResponse)
                 .toList();
     }
@@ -70,13 +62,14 @@ public class IssueService {
     }
 
     @Transactional
-    public IssueResponse createIssue(
-            IssueRequest request,
-            UUID projectId,
-            UUID principalId
-    ) {
-        authorizationService.requireAnyRole(principalId, projectId, ProjectRole.PRODUCT_OWNER,
-                ProjectRole.SCRUM_MASTER, ProjectRole.DEVELOPER);
+    public IssueResponse createIssue(IssueRequest request, UUID projectId, UUID principalId) {
+        authorizationService.requireAnyRole(principalId, projectId,
+                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER, ProjectRole.DEVELOPER);
+
+        if (request.assignedTo() != null) {
+            authorizationService.requireAnyRole(principalId, projectId,
+                    ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
+        }
 
         Project project = projectService.findProject(projectId);
         User creator = userService.findUser(principalId);
@@ -87,12 +80,11 @@ public class IssueService {
 
         issue.setType(issueConfigurationService.findType(request.typeId(), projectId));
         issue.setPriority(issueConfigurationService.findPriority(request.priorityId(), projectId));
-        issue.setStatus(issueConfigurationService.getDefaultStatus(projectId));
+        issue.setStatus(request.statusId() != null
+                ? issueConfigurationService.findStatus(request.statusId(), projectId)
+                : issueConfigurationService.getDefaultStatus(projectId));
 
         if (request.assignedTo() != null) {
-            authorizationService.requireAnyRole(principalId, projectId, ProjectRole.PRODUCT_OWNER,
-                    ProjectRole.SCRUM_MASTER);
-
             issue.setAssignedTo(userService.findUser(request.assignedTo()));
         }
 
@@ -108,24 +100,30 @@ public class IssueService {
     }
 
     @Transactional
-    public IssueResponse updateIssue(
-            IssueRequest request,
-            UUID issueId,
-            UUID principalId
-    ) {
-        Issue issue = findIssue(issueId);
+    public IssueResponse updateIssue(IssueRequest request, UUID issueId, UUID principalId) {
+        Issue issue = issueRepository.findWithDetailsById(issueId)
+                .orElseThrow(() -> new EntityNotFoundException("Issue not found"));
         UUID projectId = issue.getProject().getId();
 
         ProjectRole role = authorizationService.getRoleOrThrow(principalId, projectId);
 
         boolean isPrivileged = role == ProjectRole.PRODUCT_OWNER || role == ProjectRole.SCRUM_MASTER;
-        boolean isCreator = issue.getCreatedBy().getId().equals(principalId);
+        boolean isCreator = issue.getCreatedBy() != null && issue.getCreatedBy().getId().equals(principalId);
 
         if (!isPrivileged && !isCreator) {
             throw new AccessDeniedException("You can only edit issues you created");
         }
 
-        recordChanges(issue, request, principalId);
+        if (request.priorityId() != null && !isPrivileged) {
+            throw new AccessDeniedException("Only product owners and scrum masters can change priority");
+        }
+
+        if (request.assignedTo() != null && !isPrivileged) {
+            throw new AccessDeniedException("Only product owners and scrum masters can assign issues");
+        }
+
+        recordChanges(issue, request, principalId, projectId);
+
         issueMapper.updateIssueFromRequest(request, issue);
 
         if (request.typeId() != null) {
@@ -133,10 +131,6 @@ public class IssueService {
         }
 
         if (request.priorityId() != null) {
-            if (!isPrivileged) {
-                throw new AccessDeniedException("Only product owners and scrum masters can change priority");
-            }
-
             issue.setPriority(issueConfigurationService.findPriority(request.priorityId(), projectId));
         }
 
@@ -145,10 +139,6 @@ public class IssueService {
         }
 
         if (request.assignedTo() != null) {
-            if (!isPrivileged) {
-                throw new AccessDeniedException("Only product owners and scrum masters can assign issues");
-            }
-
             issue.setAssignedTo(userService.findUser(request.assignedTo()));
         }
 
@@ -167,8 +157,8 @@ public class IssueService {
     public void deleteIssue(UUID issueId, UUID principalId) {
         Issue issue = findIssue(issueId);
 
-        authorizationService.requireAnyRole(principalId, issue.getProject().getId(), ProjectRole.PRODUCT_OWNER,
-                ProjectRole.SCRUM_MASTER);
+        authorizationService.requireAnyRole(principalId, issue.getProject().getId(),
+                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
         issueRepository.delete(issue);
 
@@ -176,58 +166,72 @@ public class IssueService {
     }
 
     public Issue findIssue(UUID issueId) {
-        return issueRepository.findById(issueId).orElseThrow(() -> new EntityNotFoundException("Issue not found"));
+        return issueRepository.findById(issueId)
+                .orElseThrow(() -> new EntityNotFoundException("Issue not found"));
     }
 
     private Set<Component> resolveComponents(Set<UUID> componentIds, UUID projectId) {
-        return componentIds.stream()
-                .map(componentId -> componentRepository.findById(componentId)
-                        .filter(c -> c.getProject().getId().equals(projectId))
-                        .orElseThrow(() -> new EntityNotFoundException(
-                                "Component " + componentId + " not found in this project")))
-                .collect(Collectors.toSet());
+        if (componentIds.isEmpty()) return Set.of();
+
+        Set<Component> found = componentRepository.findAllByIdInAndProject_Id(componentIds, projectId);
+
+        if (found.size() != componentIds.size()) {
+            Set<UUID> foundIds = found.stream().map(Component::getId).collect(java.util.stream.Collectors.toSet());
+
+            UUID missing = componentIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .findFirst()
+                    .orElseThrow();
+
+            throw new EntityNotFoundException("Component " + missing + " not found in this project");
+        }
+
+        return found;
     }
 
-    private void recordChanges(Issue issue, IssueRequest request, UUID principalId) {
-        User changer = userService.findUser(principalId);
+    private void recordChanges(Issue issue, IssueRequest request, UUID principalId, UUID projectId) {
         List<IssueEvent> events = new ArrayList<>();
+        User changer = entityManager.getReference(User.class, principalId);
 
-        if (!request.title().equals(issue.getTitle())) {
-            events.add(buildEvent(issue, changer, "title", issue.getTitle(), request.title()));
+        if (request.title() != null && !Objects.equals(request.title(), issue.getTitle())) {
+            events.add(buildEvent(issue, changer, IssueEventField.TITLE,
+                    issue.getTitle(), request.title()));
         }
 
-        if (!request.description().equals(issue.getDescription())) {
-            events.add(buildEvent(issue, changer, "description", issue.getDescription(), request.description()));
+        if (!Objects.equals(request.description(), issue.getDescription())) {
+            events.add(buildEvent(issue, changer, IssueEventField.DESCRIPTION,
+                    issue.getDescription(), request.description()));
         }
 
-        if (request.type() != issue.getType()) {
-            events.add(buildEvent(issue, changer, "type", issue.getType().name(), request.type().name()));
+        if (request.typeId() != null && !request.typeId().equals(issue.getType().getId())) {
+            events.add(buildEvent(issue, changer, IssueEventField.TYPE,
+                    issue.getType().getId().toString(), request.typeId().toString()));
         }
 
-        if (request.priority() != issue.getPriority()) {
-            events.add(buildEvent(issue, changer, "priority", issue.getPriority().name(),
-                    request.priority().name()));
+        if (request.priorityId() != null && !request.priorityId().equals(issue.getPriority().getId())) {
+            events.add(buildEvent(issue, changer, IssueEventField.PRIORITY,
+                    issue.getPriority().getId().toString(), request.priorityId().toString()));
         }
 
-        if (request.status() != issue.getStatus()) {
-            events.add(buildEvent(issue, changer, "status", issue.getStatus().name(), request.status().name()));
+        if (request.statusId() != null && !request.statusId().equals(issue.getStatus().getId())) {
+            events.add(buildEvent(issue, changer, IssueEventField.STATUS,
+                    issue.getStatus().getId().toString(), request.statusId().toString()));
         }
 
         if (!Objects.equals(request.storyPoints(), issue.getStoryPoints())) {
-            events.add(buildEvent(issue, changer, "storyPoints", issue.getStoryPoints().toString(),
-                    request.storyPoints().toString()));
+            events.add(buildEvent(issue, changer, IssueEventField.STORY_POINTS,
+                    asString(issue.getStoryPoints()), asString(request.storyPoints())));
         }
 
-        if (!request.fixVersion().equals(issue.getFixVersion())) {
-            events.add(buildEvent(issue, changer, "fixVersion", issue.getFixVersion(), request.fixVersion()));
+        if (!Objects.equals(request.fixVersion(), issue.getFixVersion())) {
+            events.add(buildEvent(issue, changer, IssueEventField.FIX_VERSION,
+                    issue.getFixVersion(), request.fixVersion()));
         }
 
-        UUID current = issue.getAssignedTo() != null ? issue.getAssignedTo().getId() : null;
-        UUID updated = request.assignedTo();
-
-        if (!Objects.equals(current, updated)) {
-            events.add(buildEvent(issue, changer, "assignedTo", current != null ? current.toString() : "null",
-                    updated != null ? updated.toString() : "null"));
+        UUID currentAssignee = issue.getAssignedTo() != null ? issue.getAssignedTo().getId() : null;
+        if (!Objects.equals(currentAssignee, request.assignedTo())) {
+            events.add(buildEvent(issue, changer, IssueEventField.ASSIGNEE,
+                    asString(currentAssignee), asString(request.assignedTo())));
         }
 
         if (!events.isEmpty()) {
@@ -235,7 +239,13 @@ public class IssueService {
         }
     }
 
-    private IssueEvent buildEvent(Issue issue, User changer, String field, String oldVal, String newVal) {
+    private IssueEvent buildEvent(
+            Issue issue,
+            User changer,
+            IssueEventField field,
+            String oldVal,
+            String newVal
+    ) {
         IssueEvent event = new IssueEvent();
         event.setIssue(issue);
         event.setChangedBy(changer);
@@ -244,5 +254,9 @@ public class IssueService {
         event.setNewValue(newVal);
 
         return event;
+    }
+
+    private static String asString(Object value) {
+        return value == null ? null : value.toString();
     }
 }

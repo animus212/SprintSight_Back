@@ -52,14 +52,15 @@ public class IssueConfigurationService {
             throw new IllegalStateException("A type named '" + request.name() + "' already exists");
         }
 
-        IssueTypeConfiguration Configuration = mapper.toTypeEntity(request);
-        Configuration.setProject(projectService.findProject(projectId));
-
         if (request.isDefault()) {
             clearDefaultType(projectId);
         }
 
-        return mapper.toTypeResponse(typeRepository.save(Configuration));
+        IssueTypeConfiguration configuration = mapper.toTypeEntity(request);
+
+        configuration.setProject(projectService.findProject(projectId));
+
+        return mapper.toTypeResponse(typeRepository.save(configuration));
     }
 
     @Transactional
@@ -72,20 +73,21 @@ public class IssueConfigurationService {
         authorizationService.requireAnyRole(principalId, projectId,
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
-        IssueTypeConfiguration Configuration = findType(typeId, projectId);
+        IssueTypeConfiguration configuration = findType(typeId, projectId);
 
         if (request.name() != null
-                && typeRepository.existsByNameAndProject_Id(request.name(), projectId)
-                && !Configuration.getName().equals(request.name())) {
+                && !configuration.getName().equals(request.name())
+                && typeRepository.existsByNameAndProject_Id(request.name(), projectId)) {
             throw new IllegalStateException("A type named '" + request.name() + "' already exists");
         }
 
-        if (request.isDefault()) {
+        if (request.isDefault() && !configuration.isDefault()) {
             clearDefaultType(projectId);
         }
 
-        mapper.updateTypeFromRequest(request, Configuration);
-        return mapper.toTypeResponse(typeRepository.save(Configuration));
+        mapper.updateTypeFromRequest(request, configuration);
+
+        return mapper.toTypeResponse(typeRepository.save(configuration));
     }
 
     @Transactional
@@ -93,9 +95,9 @@ public class IssueConfigurationService {
         authorizationService.requireAnyRole(principalId, projectId,
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
-        IssueTypeConfiguration Configuration = findType(typeId, projectId);
+        IssueTypeConfiguration configuration = findType(typeId, projectId);
 
-        if (!typeRepository.existsByProject_IdAndIdNot(projectId, typeId)) {
+        if (typeRepository.countByProject_Id(projectId) <= 1) {
             throw new IllegalStateException("Cannot delete the only issue type in this project");
         }
 
@@ -103,7 +105,9 @@ public class IssueConfigurationService {
             throw new IllegalStateException("Cannot delete a type that is in use — reassign issues first");
         }
 
-        typeRepository.delete(Configuration);
+        typeRepository.delete(configuration);
+
+        log.info("Deleted issue type {} from project {}", typeId, projectId);
     }
 
     // ── Priorities ─────────────────────────────────────────────────────────
@@ -129,14 +133,15 @@ public class IssueConfigurationService {
             throw new IllegalStateException("A priority named '" + request.name() + "' already exists");
         }
 
-        IssuePriorityConfiguration Configuration = mapper.toPriorityEntity(request);
-        Configuration.setProject(projectService.findProject(projectId));
-
         if (request.isDefault()) {
             clearDefaultPriority(projectId);
         }
 
-        return mapper.toPriorityResponse(priorityRepository.save(Configuration));
+        IssuePriorityConfiguration configuration = mapper.toPriorityEntity(request);
+
+        configuration.setProject(projectService.findProject(projectId));
+
+        return mapper.toPriorityResponse(priorityRepository.save(configuration));
     }
 
     @Transactional
@@ -149,20 +154,21 @@ public class IssueConfigurationService {
         authorizationService.requireAnyRole(principalId, projectId,
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
-        IssuePriorityConfiguration Configuration = findPriority(priorityId, projectId);
+        IssuePriorityConfiguration configuration = findPriority(priorityId, projectId);
 
         if (request.name() != null
-                && priorityRepository.existsByNameAndProject_Id(request.name(), projectId)
-                && !Configuration.getName().equals(request.name())) {
+                && !configuration.getName().equals(request.name())
+                && priorityRepository.existsByNameAndProject_Id(request.name(), projectId)) {
             throw new IllegalStateException("A priority named '" + request.name() + "' already exists");
         }
 
-        if (request.isDefault()) {
+        if (request.isDefault() && !configuration.isDefault()) {
             clearDefaultPriority(projectId);
         }
 
-        mapper.updatePriorityFromRequest(request, Configuration);
-        return mapper.toPriorityResponse(priorityRepository.save(Configuration));
+        mapper.updatePriorityFromRequest(request, configuration);
+
+        return mapper.toPriorityResponse(priorityRepository.save(configuration));
     }
 
     @Transactional
@@ -170,9 +176,9 @@ public class IssueConfigurationService {
         authorizationService.requireAnyRole(principalId, projectId,
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
-        IssuePriorityConfiguration Configuration = findPriority(priorityId, projectId);
+        IssuePriorityConfiguration configuration = findPriority(priorityId, projectId);
 
-        if (!priorityRepository.existsByProject_IdAndIdNot(projectId, priorityId)) {
+        if (priorityRepository.countByProject_Id(projectId) <= 1) {
             throw new IllegalStateException("Cannot delete the only priority in this project");
         }
 
@@ -180,7 +186,9 @@ public class IssueConfigurationService {
             throw new IllegalStateException("Cannot delete a priority that is in use — reassign issues first");
         }
 
-        priorityRepository.delete(Configuration);
+        priorityRepository.delete(configuration);
+
+        log.info("Deleted issue priority {} from project {}", priorityId, projectId);
     }
 
     // ── Statuses ───────────────────────────────────────────────────────────
@@ -194,7 +202,11 @@ public class IssueConfigurationService {
     }
 
     @Transactional
-    public IssueStatusConfigurationResponse createStatus(IssueStatusRequest request, UUID projectId, UUID principalId) {
+    public IssueStatusConfigurationResponse createStatus(
+            IssueStatusRequest request,
+            UUID projectId,
+            UUID principalId
+    ) {
         authorizationService.requireAnyRole(principalId, projectId,
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
@@ -202,14 +214,15 @@ public class IssueConfigurationService {
             throw new IllegalStateException("A status named '" + request.name() + "' already exists");
         }
 
-        IssueStatusConfiguration Configuration = mapper.toStatusEntity(request);
-        Configuration.setProject(projectService.findProject(projectId));
-
         if (request.isDefault()) {
             clearDefaultStatus(projectId);
         }
 
-        return mapper.toStatusResponse(statusRepository.save(Configuration));
+        IssueStatusConfiguration configuration = mapper.toStatusEntity(request);
+
+        configuration.setProject(projectService.findProject(projectId));
+
+        return mapper.toStatusResponse(statusRepository.save(configuration));
     }
 
     @Transactional
@@ -222,27 +235,27 @@ public class IssueConfigurationService {
         authorizationService.requireAnyRole(principalId, projectId,
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
-        IssueStatusConfiguration Configuration = findStatus(statusId, projectId);
+        IssueStatusConfiguration configuration = findStatus(statusId, projectId);
 
         if (request.name() != null
-                && statusRepository.existsByNameAndProject_Id(request.name(), projectId)
-                && !Configuration.getName().equals(request.name())) {
+                && !configuration.getName().equals(request.name())
+                && statusRepository.existsByNameAndProject_Id(request.name(), projectId)) {
             throw new IllegalStateException("A status named '" + request.name() + "' already exists");
         }
 
-        if (!request.isCompleted() && Configuration.isCompleted()) {
-            if (!statusRepository.existsByProject_IdAndIsCompletedTrue(projectId)) {
-                throw new IllegalStateException(
-                        "At least one status must be marked as completed for sprint closure to work");
-            }
+        if (!request.isCompleted() && configuration.isCompleted()
+                && statusRepository.countByProject_IdAndIsCompletedTrue(projectId) <= 1) {
+            throw new IllegalStateException(
+                    "At least one status must be marked as completed for sprint closure to work");
         }
 
-        if (request.isDefault()) {
+        if (request.isDefault() && !configuration.isDefault()) {
             clearDefaultStatus(projectId);
         }
 
-        mapper.updateStatusFromRequest(request, Configuration);
-        return mapper.toStatusResponse(statusRepository.save(Configuration));
+        mapper.updateStatusFromRequest(request, configuration);
+
+        return mapper.toStatusResponse(statusRepository.save(configuration));
     }
 
     @Transactional
@@ -250,14 +263,14 @@ public class IssueConfigurationService {
         authorizationService.requireAnyRole(principalId, projectId,
                 ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
 
-        IssueStatusConfiguration Configuration = findStatus(statusId, projectId);
+        IssueStatusConfiguration configuration = findStatus(statusId, projectId);
 
-        if (!statusRepository.existsByProject_IdAndIdNot(projectId, statusId)) {
+        if (statusRepository.countByProject_Id(projectId) <= 1) {
             throw new IllegalStateException("Cannot delete the only status in this project");
         }
 
-        if (Configuration.isCompleted()
-                && !statusRepository.existsByProject_IdAndIsCompletedTrue(projectId)) {
+        if (configuration.isCompleted()
+                && statusRepository.countByProject_IdAndIsCompletedTrue(projectId) <= 1) {
             throw new IllegalStateException(
                     "Cannot delete the last completed status — sprint closure requires at least one");
         }
@@ -267,87 +280,88 @@ public class IssueConfigurationService {
                     "Cannot delete a status that is in use — move issues to another status first");
         }
 
-        statusRepository.delete(Configuration);
+        statusRepository.delete(configuration);
+
+        log.info("Deleted issue status {} from project {}", statusId, projectId);
     }
 
-    // ── Default resolution (used by IssueService) ─────────────────────────
+    // ── Lookup / default helpers (used by IssueService) ────────────────────
 
     public IssueTypeConfiguration getDefaultType(UUID projectId) {
         return typeRepository.findByProject_IdAndIsDefaultTrue(projectId)
                 .orElseThrow(() -> new IllegalStateException(
-                        "No default issue type Configured for this project"));
+                        "No default issue type configured for this project"));
     }
 
     public IssuePriorityConfiguration getDefaultPriority(UUID projectId) {
         return priorityRepository.findByProject_IdAndIsDefaultTrue(projectId)
                 .orElseThrow(() -> new IllegalStateException(
-                        "No default priority Configured for this project"));
+                        "No default priority configured for this project"));
     }
 
     public IssueStatusConfiguration getDefaultStatus(UUID projectId) {
         return statusRepository.findByProject_IdAndIsDefaultTrue(projectId)
                 .orElseThrow(() -> new IllegalStateException(
-                        "No default status Configured for this project"));
+                        "No default status configured for this project"));
     }
 
     public IssueTypeConfiguration findType(UUID typeId, UUID projectId) {
-        IssueTypeConfiguration Configuration = typeRepository.findById(typeId)
+        IssueTypeConfiguration configuration = typeRepository.findById(typeId)
                 .orElseThrow(() -> new EntityNotFoundException("Issue type not found"));
 
-        if (!Configuration.getProject().getId().equals(projectId)) {
+        if (!configuration.getProject().getId().equals(projectId)) {
             throw new AccessDeniedException("Issue type does not belong to this project");
         }
 
-        return Configuration;
+        return configuration;
     }
 
     public IssuePriorityConfiguration findPriority(UUID priorityId, UUID projectId) {
-        IssuePriorityConfiguration Configuration = priorityRepository.findById(priorityId)
+        IssuePriorityConfiguration configuration = priorityRepository.findById(priorityId)
                 .orElseThrow(() -> new EntityNotFoundException("Priority not found"));
 
-        if (!Configuration.getProject().getId().equals(projectId)) {
+        if (!configuration.getProject().getId().equals(projectId)) {
             throw new AccessDeniedException("Priority does not belong to this project");
         }
 
-        return Configuration;
+        return configuration;
     }
 
     public IssueStatusConfiguration findStatus(UUID statusId, UUID projectId) {
-        IssueStatusConfiguration Configuration = statusRepository.findById(statusId)
+        IssueStatusConfiguration configuration = statusRepository.findById(statusId)
                 .orElseThrow(() -> new EntityNotFoundException("Status not found"));
 
-        if (!Configuration.getProject().getId().equals(projectId)) {
+        if (!configuration.getProject().getId().equals(projectId)) {
             throw new AccessDeniedException("Status does not belong to this project");
         }
 
-        return Configuration;
+        return configuration;
     }
 
-    // ── Default seeding (called by ProjectService on project creation) ─────
+    // ── Seed defaults (called by ProjectService on project creation) ───────
 
     public void seedDefaults(Project project) {
-        List<IssueTypeConfiguration> types = List.of(
+        typeRepository.saveAll(List.of(
                 buildType(project, "Bug",   true),
                 buildType(project, "Task",  false),
                 buildType(project, "Story", false)
-        );
-        typeRepository.saveAll(types);
+        ));
 
-        List<IssuePriorityConfiguration> priorities = List.of(
+        priorityRepository.saveAll(List.of(
                 buildPriority(project, "Critical", 0, false),
                 buildPriority(project, "High",     1, false),
                 buildPriority(project, "Medium",   2, true),
                 buildPriority(project, "Low",      3, false)
-        );
-        priorityRepository.saveAll(priorities);
+        ));
 
-        List<IssueStatusConfiguration> statuses = List.of(
+        statusRepository.saveAll(List.of(
                 buildStatus(project, "To Do",       0, false, true),
                 buildStatus(project, "In Progress", 1, false, false),
                 buildStatus(project, "Done",        2, true,  false)
-        );
-        statusRepository.saveAll(statuses);
+        ));
     }
+
+    // ── Private helpers ────────────────────────────────────────────────────
 
     private void clearDefaultType(UUID projectId) {
         typeRepository.findByProject_IdAndIsDefaultTrue(projectId)

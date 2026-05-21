@@ -5,6 +5,7 @@ import com.example.sprintsight.dtos.responses.ProjectMemberResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.mappers.ProjectMemberMapper;
 import com.example.sprintsight.repositories.ProjectMemberRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +19,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ProjectMemberService {
-    private final UserService userService;
-    private final ProjectService projectService;
     private final ProjectMemberMapper projectMemberMapper;
     private final ProjectMemberRepository projectMemberRepository;
+    private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<ProjectMemberResponse> getAllProjectMembers(UUID projectId) {
@@ -40,22 +40,23 @@ public class ProjectMemberService {
     }
 
     @Transactional
-    protected void addProjectMember(UUID userId, ProjectRole projectRole, UUID projectId) {
-        User user = userService.findUser(userId);
-        Project project = projectService.findProject(projectId);
-
+    public void addProjectMember(UUID userId, ProjectRole projectRole, UUID projectId) {
         if (projectMemberRepository.existsById_UserIdAndId_ProjectId(userId, projectId)) {
             throw new IllegalStateException("User is already a member of this project");
         }
 
-        ProjectMemberId id = new ProjectMemberId(projectId, userId);
+        User userRef = entityManager.getReference(User.class, userId);
+        Project projectRef = entityManager.getReference(Project.class, projectId);
+
         ProjectMember projectMember = new ProjectMember();
-        projectMember.setId(id);
-        projectMember.setUser(user);
-        projectMember.setProject(project);
+        projectMember.setId(new ProjectMemberId(projectId, userId));
+        projectMember.setUser(userRef);
+        projectMember.setProject(projectRef);
         projectMember.setProjectRole(projectRole);
 
-        saveProjectMember(projectMember, "Added project member");
+        projectMemberRepository.save(projectMember);
+
+        log.info("Added project member: user={}, project={}, role={}", userId, projectId, projectRole);
     }
 
     @Transactional
@@ -68,7 +69,11 @@ public class ProjectMemberService {
 
         projectMemberMapper.updateProjectMemberFromRequest(request, projectMember);
 
-        return saveProjectMember(projectMember, "Updated project member");
+        ProjectMember saved = projectMemberRepository.save(projectMember);
+
+        log.info("Updated project member: user={}, project={}", userId, projectId);
+
+        return projectMemberMapper.toProjectMemberResponse(saved);
     }
 
     @Transactional
@@ -77,19 +82,11 @@ public class ProjectMemberService {
 
         projectMemberRepository.delete(projectMember);
 
-        log.info("Deleted project member: {}, {}", userId, projectId);
+        log.info("Deleted project member: user={}, project={}", userId, projectId);
     }
 
     private ProjectMember findProjectMember(UUID userId, UUID projectId) {
         return projectMemberRepository.findById(new ProjectMemberId(projectId, userId))
                 .orElseThrow(() -> new EntityNotFoundException("Project member not found"));
-    }
-
-    private ProjectMemberResponse saveProjectMember(ProjectMember projectMember, String logMessage) {
-        ProjectMember saved = projectMemberRepository.save(projectMember);
-
-        log.info("{}: {}", logMessage, saved.getId());
-
-        return projectMemberMapper.toProjectMemberResponse(saved);
     }
 }

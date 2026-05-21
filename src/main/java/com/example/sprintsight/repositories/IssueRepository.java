@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -35,4 +37,17 @@ public interface IssueRepository extends JpaRepository<Issue, UUID> {
     boolean existsByType_Id(UUID typeId);
     boolean existsByPriority_Id(UUID priorityId);
     boolean existsByStatus_Id(UUID statusId);
+
+    @EntityGraph(attributePaths = {"type", "priority", "status", "assignedTo"})
+    @Query("""
+        SELECT i FROM Issue i
+        WHERE i.project.id = :projectId
+          AND NOT EXISTS (
+              SELECT 1 FROM SprintIssue si
+              WHERE si.issue = i
+                AND si.removedAt IS NULL
+                AND si.sprint.status <> com.example.sprintsight.entities.SprintStatus.COMPLETED
+          )
+    """)
+    List<Issue> findBacklogByProject_Id(@Param("projectId") UUID projectId);
 }

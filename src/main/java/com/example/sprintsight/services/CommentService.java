@@ -5,6 +5,7 @@ import com.example.sprintsight.dtos.responses.CommentResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.mappers.CommentMapper;
 import com.example.sprintsight.repositories.CommentRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +21,9 @@ import java.util.*;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final IssueService issueService;
-    private final UserService userService;
     private final ProjectAuthorizationService authorizationService;
     private final CommentMapper commentMapper;
+    private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<CommentResponse> getComments(UUID issueId, UUID principalId) {
@@ -40,14 +41,14 @@ public class CommentService {
     public CommentResponse addComment(CommentRequest request, UUID issueId, UUID principalId) {
         Issue issue = issueService.findIssue(issueId);
 
-        authorizationService.requireAnyRole(principalId, issue.getProject().getId(), ProjectRole.PRODUCT_OWNER,
-                ProjectRole.SCRUM_MASTER, ProjectRole.DEVELOPER);
+        authorizationService.requireAnyRole(principalId, issue.getProject().getId(),
+                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER, ProjectRole.DEVELOPER);
 
-        User author = userService.findUser(principalId);
+        User authorRef = entityManager.getReference(User.class, principalId);
 
         Comment comment = commentMapper.toEntity(request);
         comment.setIssue(issue);
-        comment.setAuthor(author);
+        comment.setAuthor(authorRef);
 
         Comment saved = commentRepository.save(comment);
 
@@ -62,7 +63,8 @@ public class CommentService {
 
         verifyCommentOwnership(comment, principalId);
 
-        comment.setContent(request.content());
+        commentMapper.updateCommentFromRequest(request, comment);
+
         Comment saved = commentRepository.save(comment);
 
         return commentMapper.toCommentResponse(saved);

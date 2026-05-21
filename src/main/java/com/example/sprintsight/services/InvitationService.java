@@ -41,11 +41,11 @@ public class InvitationService {
     }
 
     @Transactional
-    public InvitationResponse sendInvitation(
-            SendInvitationRequest request,
-            UUID projectId,
-            UUID senderId
-    ) {
+    public InvitationResponse sendInvitation(SendInvitationRequest request, UUID projectId, UUID senderId) {
+        if (senderId.equals(request.receiverId())) {
+            throw new IllegalArgumentException("You cannot invite yourself");
+        }
+
         User sender = userService.findUser(senderId);
         User receiver = userService.findUser(request.receiverId());
         Project project = projectService.findProject(projectId);
@@ -65,24 +65,26 @@ public class InvitationService {
         invitation.setReceiver(receiver);
 
         ProjectInvitation saved = invitationRepository.save(invitation);
-        InvitationResponse response = invitationMapper.toInvitationResponse(saved);
 
         log.info("Invitation sent from {} to {} for project {}", senderId, request.receiverId(), projectId);
 
-        return response;
+        return invitationMapper.toInvitationResponse(saved);
     }
 
     @Transactional
     public InvitationResponse acceptInvitation(UUID invitationId, UUID principalId) {
         ProjectInvitation invitation = findPendingInvitation(invitationId, principalId);
 
-        invitation.setStatus(InvitationStatus.ACCEPTED);
-        invitation.setRespondedAt(Instant.now());
-        invitationRepository.save(invitation);
-
         projectMemberService.addProjectMember(
                 principalId, invitation.getIntendedRole(), invitation.getProject().getId()
         );
+
+        invitation.setStatus(InvitationStatus.ACCEPTED);
+        invitation.setRespondedAt(Instant.now());
+
+        invitationRepository.save(invitation);
+
+        log.info("Invitation {} accepted by {}", invitationId, principalId);
 
         return invitationMapper.toInvitationResponse(invitation);
     }
@@ -93,7 +95,10 @@ public class InvitationService {
 
         invitation.setStatus(InvitationStatus.REJECTED);
         invitation.setRespondedAt(Instant.now());
+
         invitationRepository.save(invitation);
+
+        log.info("Invitation {} rejected by {}", invitationId, principalId);
 
         return invitationMapper.toInvitationResponse(invitation);
     }

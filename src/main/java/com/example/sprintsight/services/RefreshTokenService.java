@@ -4,9 +4,11 @@ import com.example.sprintsight.entities.RefreshToken;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.exceptions.TokenRefreshException;
 import com.example.sprintsight.repositories.RefreshTokenRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +21,13 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
-    private final UserService userService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EntityManager entityManager;
 
+    @Value("${SprintSight.app.refreshExpirationDays:7}")
+    private long refreshExpirationDays;
+
+    @Transactional(readOnly = true)
     public RefreshToken findByToken(String rawToken) {
         return refreshTokenRepository.findByToken(DigestUtils.sha256Hex(rawToken))
                 .orElseThrow(() -> new TokenRefreshException("Invalid or expired refresh token"));
@@ -29,14 +35,14 @@ public class RefreshTokenService {
 
     @Transactional
     public String createRefreshToken(UUID userId) {
-        User user = userService.findUser(userId);
+        User userRef = entityManager.getReference(User.class, userId);
 
         String rawToken = UUID.randomUUID().toString();
 
         RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setUser(user);
+        refreshToken.setUser(userRef);
         refreshToken.setToken(DigestUtils.sha256Hex(rawToken));
-        refreshToken.setExpiryDate(Instant.now().plus(Duration.ofDays(7)));
+        refreshToken.setExpiryDate(Instant.now().plus(Duration.ofDays(refreshExpirationDays)));
 
         refreshTokenRepository.save(refreshToken);
 
@@ -65,16 +71,18 @@ public class RefreshTokenService {
 
     @Transactional
     public void deleteByUserId(UUID userId) {
-        refreshTokenRepository.deleteByUser_Id(userId);
+        int deleted = refreshTokenRepository.deleteByUser_Id(userId);
+
+        log.info("Deleted {} refresh token(s) for user: {}", deleted, userId);
     }
 
     @Scheduled(cron = "${sprintsight.refresh-token.cleanup-cron:0 0 3 * * *}")
     @Transactional
     public void deleteExpiredTokens() {
-        Instant now = Instant.now();
-        int deleted = refreshTokenRepository.deleteAllExpired(now);
-        log.info("Expired refresh token cleanup: deleted {} token(s)", deleted);
+        int deleted = refreshTokenRepository.deleteAllExpired(Instant.now());
 
-        log.info("Expired refresh token cleanup running at {}", now);
+        if (deleted > 0) {
+            log.info("Expired refresh token cleanup: deleted {} token(s)", deleted);
+        }
     }
 }

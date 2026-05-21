@@ -32,15 +32,39 @@ public class UserService {
 
     @Transactional
     public UserResponse addUser(UserRequest request) {
+        if (userRepository.existsByUsername(request.username())) {
+            throw new IllegalStateException("Username already taken");
+        }
+
+        if (userRepository.existsByEmail(request.email())) {
+            throw new IllegalStateException("Email already registered");
+        }
+
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
 
-        return saveUser(user, "Registered new user");
+        User saved = userRepository.save(user);
+
+        log.info("Registered new user: {}", saved.getId());
+
+        return userMapper.toUserResponse(saved);
     }
 
     @Transactional
     public UserResponse updateUser(UserRequest request, UUID id) {
         User user = findUser(id);
+
+        if (request.username() != null
+                && !request.username().equals(user.getUsername())
+                && userRepository.existsByUsername(request.username())) {
+            throw new IllegalStateException("Username already taken");
+        }
+
+        if (request.email() != null
+                && !request.email().equals(user.getEmail())
+                && userRepository.existsByEmail(request.email())) {
+            throw new IllegalStateException("Email already registered");
+        }
 
         userMapper.updateUserFromRequest(request, user);
 
@@ -50,7 +74,11 @@ public class UserService {
             refreshTokenService.deleteByUserId(id);
         }
 
-        return saveUser(user, "Updated user");
+        User saved = userRepository.save(user);
+
+        log.info("Updated user: {}", saved.getId());
+
+        return userMapper.toUserResponse(saved);
     }
 
     @Transactional
@@ -59,24 +87,17 @@ public class UserService {
 
         if (!projectRepository.findByCreatedBy_Id(id).isEmpty()) {
             throw new IllegalStateException(
-                    "User owns projects — reassign or delete them before removing this account"
-            );
+                    "User owns projects — reassign or delete them before removing this account");
         }
+
+        refreshTokenService.deleteByUserId(id);
 
         userRepository.delete(user);
 
         log.info("Deleted user: {}", id);
     }
 
-    protected User findUser(UUID id) {
+    public User findUser(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
-    }
-
-    private UserResponse saveUser(User user, String logMessage) {
-        User savedUser = userRepository.save(user);
-
-        log.info("{}: {}", logMessage, savedUser.getId());
-
-        return userMapper.toUserResponse(savedUser);
     }
 }
