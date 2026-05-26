@@ -10,6 +10,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +24,13 @@ public class ProjectMemberService {
     private final ProjectMemberMapper projectMemberMapper;
     private final ProjectMemberRepository projectMemberRepository;
     private final EntityManager entityManager;
+    private final ProjectAuthorizationService authorizationService;
 
     @Transactional(readOnly = true)
-    public List<ProjectMemberResponse> getAllProjectMembers(UUID projectId) {
-        return projectMemberRepository.findById_ProjectId(projectId)
-                .stream()
+    public List<ProjectMemberResponse> getAllProjectMembers(UUID projectId, UUID principalId) {
+        authorizationService.getMemberOrThrow(principalId, projectId);
+
+        return projectMemberRepository.findById_ProjectId(projectId).stream()
                 .map(projectMemberMapper::toProjectMemberResponse)
                 .toList();
     }
@@ -64,26 +67,44 @@ public class ProjectMemberService {
     public ProjectMemberResponse updateProjectMember(
             UpdateProjectMemberRequest request,
             UUID userId,
-            UUID projectId
+            UUID projectId,
+            UUID principalId
     ) {
+        authorizationService.requireAnyRole(principalId, projectId,
+                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
+
+        if (principalId.equals(userId)) {
+            throw new AccessDeniedException("You cannot change your own role");
+        }
+
         ProjectMember projectMember = findProjectMember(userId, projectId);
 
         projectMemberMapper.updateProjectMemberFromRequest(request, projectMember);
 
         ProjectMember saved = projectMemberRepository.save(projectMember);
 
-        log.info("Updated project member: user={}, project={}", userId, projectId);
+        log.info("Updated project member: user={}, project={}, by={}", userId, projectId, principalId);
 
         return projectMemberMapper.toProjectMemberResponse(saved);
     }
 
     @Transactional
-    public void deleteProjectMember(UUID userId, UUID projectId) {
+    public void deleteProjectMember(UUID userId, UUID projectId, UUID principalId) {
+        boolean selfRemoval = principalId.equals(userId);
+
+        if (!selfRemoval) {
+            authorizationService.requireAnyRole(principalId, projectId,
+                    ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
+        } else {
+            authorizationService.getMemberOrThrow(principalId, projectId);
+        }
+
         ProjectMember projectMember = findProjectMember(userId, projectId);
 
         projectMemberRepository.delete(projectMember);
 
-        log.info("Deleted project member: user={}, project={}", userId, projectId);
+        log.info("Deleted project member: user={}, project={}, by={} (selfRemoval={})",
+                userId, projectId, principalId, selfRemoval);
     }
 
     private ProjectMember findProjectMember(UUID userId, UUID projectId) {

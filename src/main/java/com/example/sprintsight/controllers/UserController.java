@@ -2,21 +2,23 @@ package com.example.sprintsight.controllers;
 
 import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
+import com.example.sprintsight.dtos.responses.InvitationResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
 import com.example.sprintsight.dtos.validation.ValidationGroups;
 import com.example.sprintsight.security.JwtService;
 import com.example.sprintsight.security.UserPrincipal;
+import com.example.sprintsight.services.InvitationService;
 import com.example.sprintsight.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -25,6 +27,7 @@ import java.util.UUID;
 public class UserController {
     private final JwtService jwtService;
     private final UserService userService;
+    private final InvitationService invitationService;
 
     @GetMapping("/{id}")
     @PreAuthorize("#principal.id.equals(#id)")
@@ -37,19 +40,14 @@ public class UserController {
 
     @PutMapping("/{id}")
     @PreAuthorize("#principal.id.equals(#id)")
-    public ResponseEntity<ApiResponse<UserResponse>> putUser(
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable UUID id,
             @Validated(ValidationGroups.Put.class) @RequestBody UserRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        ResponseCookie jwtCookie = jwtService.generateJwtCookie(principal);
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(new ApiResponse<>(
-                        "User updated successfully",
-                        userService.updateUser(request, id)
-                ));
+        return ResponseEntity.ok(new ApiResponse<>(
+                "User updated successfully",
+                userService.updateUser(request, id)));
     }
 
     @DeleteMapping("/{id}")
@@ -64,5 +62,16 @@ public class UserController {
                 .header(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtCookie().toString())
                 .header(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtRefreshCookie().toString())
                 .body(new ApiResponse<>("User deleted successfully", null));
+    }
+
+    @GetMapping("/{userId}/invitations")
+    @PreAuthorize("#principal.id.equals(#userId)")
+    public ResponseEntity<ApiResponse<List<InvitationResponse>>> getPendingInvitations(
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Invitations retrieved successfully",
+                invitationService.getPendingInvitations(userId)));
     }
 }

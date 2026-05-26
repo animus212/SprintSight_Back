@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(value = "/api/projects/{projectId}/Configuration", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
+@RequestMapping(value = "/api/projects/{projectId}/configurations", produces = MediaType.APPLICATION_JSON_VALUE)
 public class IssueConfigurationController {
     private final IssueConfigurationService issueConfigurationService;
 
@@ -53,7 +53,8 @@ public class IssueConfigurationController {
             @PathVariable UUID projectId,
             @PathVariable UUID typeId,
             @Valid @RequestBody IssueTypeRequest request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Type updated successfully",
                 issueConfigurationService.updateType(request, typeId, projectId, principal.getId())));
     }
@@ -106,7 +107,8 @@ public class IssueConfigurationController {
     public ResponseEntity<ApiResponse<Void>> deletePriority(
             @PathVariable UUID projectId,
             @PathVariable UUID priorityId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         issueConfigurationService.deletePriority(priorityId, projectId, principal.getId());
 
         return ResponseEntity.ok(new ApiResponse<>("Priority deleted successfully", null));
@@ -117,7 +119,8 @@ public class IssueConfigurationController {
     @GetMapping("/statuses")
     public ResponseEntity<ApiResponse<List<IssueStatusConfigurationResponse>>> getStatuses(
             @PathVariable UUID projectId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Statuses retrieved successfully",
                 issueConfigurationService.getStatuses(projectId, principal.getId())));
     }

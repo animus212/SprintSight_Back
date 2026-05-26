@@ -21,16 +21,16 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(value = "/api/projects/{projectId}/sprints",
-        produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
+@RequestMapping(value = "/api/projects/{projectId}/sprints", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SprintController {
     private final SprintService sprintService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<SprintSummaryResponse>>> getSprints(
             @PathVariable UUID projectId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Sprints retrieved successfully",
                 sprintService.getSprints(projectId, principal.getId())));
     }
@@ -39,7 +39,8 @@ public class SprintController {
     public ResponseEntity<ApiResponse<SprintResponse>> getSprint(
             @PathVariable UUID projectId,
             @PathVariable UUID sprintId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Sprint retrieved successfully",
                 sprintService.getSprint(sprintId, principal.getId())));
     }
@@ -48,19 +49,21 @@ public class SprintController {
     public ResponseEntity<ApiResponse<SprintSummaryResponse>> createSprint(
             @PathVariable UUID projectId,
             @Valid @RequestBody SprintRequest request,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        SprintSummaryResponse sprint =
-                sprintService.createSprint(request, projectId, principal.getId());
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        SprintSummaryResponse sprint = sprintService.createSprint(request, projectId, principal.getId());
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>("Sprint created successfully", sprint));
     }
 
-    @PatchMapping("/{sprintId}")
+    @PutMapping("/{sprintId}")
     public ResponseEntity<ApiResponse<SprintSummaryResponse>> updateSprint(
             @PathVariable UUID projectId,
             @PathVariable UUID sprintId,
             @Valid @RequestBody SprintRequest request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Sprint updated successfully",
                 sprintService.updateSprint(request, sprintId, principal.getId())));
     }
@@ -70,7 +73,8 @@ public class SprintController {
             @PathVariable UUID projectId,
             @PathVariable UUID sprintId,
             @Valid @RequestBody StartSprintRequest request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Sprint started successfully",
                 sprintService.startSprint(request, sprintId, principal.getId())));
     }
@@ -79,8 +83,9 @@ public class SprintController {
     public ResponseEntity<ApiResponse<SprintResponse>> closeSprint(
             @PathVariable UUID projectId,
             @PathVariable UUID sprintId,
-            @RequestBody CloseSprintRequest request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @Valid @RequestBody CloseSprintRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>("Sprint closed successfully",
                 sprintService.closeSprint(request, sprintId, principal.getId())));
     }
@@ -90,9 +95,10 @@ public class SprintController {
             @PathVariable UUID projectId,
             @PathVariable UUID sprintId,
             @PathVariable UUID issueId,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        SprintIssueResponse entry =
-                sprintService.addIssueToSprint(sprintId, issueId, principal.getId());
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        SprintIssueResponse entry = sprintService.addIssueToSprint(sprintId, issueId, principal.getId());
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>("Issue added to sprint", entry));
     }
@@ -102,8 +108,10 @@ public class SprintController {
             @PathVariable UUID projectId,
             @PathVariable UUID sprintId,
             @PathVariable UUID issueId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         sprintService.removeIssueFromSprint(sprintId, issueId, principal.getId());
+
         return ResponseEntity.ok(new ApiResponse<>("Issue removed from sprint", null));
     }
 }

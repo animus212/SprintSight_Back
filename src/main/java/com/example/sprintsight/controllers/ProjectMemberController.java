@@ -23,14 +23,15 @@ public class ProjectMemberController {
     private final ProjectMemberService projectMemberService;
 
     @GetMapping("/{projectId}/members")
-    public ResponseEntity<ApiResponse<List<ProjectMemberResponse>>> getProjectMembers(@PathVariable UUID projectId) {
+    public ResponseEntity<ApiResponse<List<ProjectMemberResponse>>> getProjectMembers(
+            @PathVariable UUID projectId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Members retrieved successfully",
-                projectMemberService.getAllProjectMembers(projectId)
-        ));
+                projectMemberService.getAllProjectMembers(projectId, principal.getId())));
     }
 
-    @PreAuthorize("#principal.id.equals(#userId)")
     @PutMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ApiResponse<ProjectMemberResponse>> updateProjectMember(
             @PathVariable UUID projectId,
@@ -39,19 +40,17 @@ public class ProjectMemberController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(new ApiResponse<>(
-                "Members updated successfully",
-                projectMemberService.updateProjectMember(request, userId, projectId)
-        ));
+                "Member updated successfully",
+                projectMemberService.updateProjectMember(request, userId, projectId, principal.getId())));
     }
 
-    @PreAuthorize("#principal.id.equals(#userId)")
     @DeleteMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ApiResponse<Void>> deleteProjectMember(
             @PathVariable UUID projectId,
             @PathVariable UUID userId,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        projectMemberService.deleteProjectMember(userId, projectId);
+        projectMemberService.deleteProjectMember(userId, projectId, principal.getId());
 
         return ResponseEntity.ok(new ApiResponse<>("Member removed successfully", null));
     }
