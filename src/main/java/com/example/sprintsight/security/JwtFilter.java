@@ -10,9 +10,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -34,7 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         String jwt = jwtService.getJwtFromCookies(request);
 
-        if (jwt == null) {
+        if (jwt == null || jwt.isBlank()) {
             filterChain.doFilter(request, response);
 
             return;
@@ -57,11 +62,35 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
         } catch (ExpiredJwtException e) {
-            log.warn("Expired JWT token for request {}: {}", request.getRequestURI(), e.getMessage());
+            log.warn("Expired JWT for {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+
+            clearJwtCookie(response);
         } catch (JwtException e) {
-            log.warn("Invalid JWT token for request {}: {}", request.getRequestURI(), e.getMessage());
+            log.warn("Invalid JWT for {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+
+            clearJwtCookie(response);
+        } catch (UsernameNotFoundException e) {
+            log.warn("JWT for deleted user on {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+
+            clearJwtCookie(response);
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void clearJwtCookie(HttpServletResponse response) {
+        response.addHeader(HttpHeaders.SET_COOKIE, jwtService.getCleanJwtCookie().toString());
+    }
+
+    @Configuration
+    static class JwtFilterRegistration {
+        @Bean
+        FilterRegistrationBean<JwtFilter> disableAutoRegistration(JwtFilter filter) {
+            FilterRegistrationBean<JwtFilter> reg = new FilterRegistrationBean<>(filter);
+
+            reg.setEnabled(false);
+
+            return reg;
+        }
     }
 }

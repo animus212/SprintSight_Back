@@ -1,14 +1,17 @@
 package com.example.sprintsight.controllers;
 
-import com.example.sprintsight.dtos.requests.CreateProjectRequest;
-import com.example.sprintsight.dtos.requests.UpdateProjectRequest;
+import com.example.sprintsight.dtos.requests.ProjectRequest;
+import com.example.sprintsight.dtos.requests.SendInvitationRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
+import com.example.sprintsight.dtos.responses.InvitationResponse;
 import com.example.sprintsight.dtos.responses.ProjectResponse;
 import com.example.sprintsight.dtos.validation.ValidationGroups;
 import com.example.sprintsight.security.UserPrincipal;
+import com.example.sprintsight.services.InvitationService;
 import com.example.sprintsight.services.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,6 +26,7 @@ import java.util.UUID;
 @RequestMapping(value = "/api/projects", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ProjectController {
     private final ProjectService projectService;
+    private final InvitationService invitationService;
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectResponse>> getProject(
@@ -31,8 +35,7 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Project retrieved successfully",
-                projectService.getProject(id)
-        ));
+                projectService.getProject(id, principal.getId())));
     }
 
     @GetMapping("/owned")
@@ -41,8 +44,7 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Projects retrieved successfully",
-                projectService.getOwnedProjects(principal.getId())
-        ));
+                projectService.getOwnedProjects(principal.getId())));
     }
 
     @GetMapping("/member")
@@ -51,43 +53,29 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Projects retrieved successfully",
-                projectService.getMemberProjects(principal.getId())
-        ));
+                projectService.getMemberProjects(principal.getId())));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> addProject(
-            @Valid @RequestBody CreateProjectRequest request,
+            @Valid @RequestBody ProjectRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Project created successfully",
-                projectService.addProject(request, principal.getId())
-        ));
+        ProjectResponse project = projectService.addProject(request, principal.getId());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>("Project created successfully", project));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProjectResponse>> putProject(
+    public ResponseEntity<ApiResponse<ProjectResponse>> updateProject(
             @PathVariable UUID id,
-            @Validated(ValidationGroups.Put.class) @RequestBody UpdateProjectRequest request,
+            @Validated(ValidationGroups.Put.class) @RequestBody ProjectRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Project updated successfully",
-                projectService.updateProject(request, id, principal.getId(), true)
-        ));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProjectResponse>> patchProject(
-            @PathVariable UUID id,
-            @Validated(ValidationGroups.Patch.class) @RequestBody UpdateProjectRequest request,
-            @AuthenticationPrincipal UserPrincipal principal
-    ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Project updated successfully",
-                projectService.updateProject(request, id, principal.getId(), false)
-        ));
+                projectService.updateProject(request, id, principal.getId())));
     }
 
     @DeleteMapping("/{id}")
@@ -98,5 +86,17 @@ public class ProjectController {
         projectService.deleteProject(id, principal.getId());
 
         return ResponseEntity.ok(new ApiResponse<>("Project deleted successfully", null));
+    }
+
+    @PostMapping("/{projectId}/invitations")
+    public ResponseEntity<ApiResponse<InvitationResponse>> sendInvitation(
+            @PathVariable UUID projectId,
+            @Valid @RequestBody SendInvitationRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        InvitationResponse invitation = invitationService.sendInvitation(request, projectId, principal.getId());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>("Invitation sent successfully", invitation));
     }
 }

@@ -12,7 +12,6 @@ public record UserResponse(
         String fullName,
         String bio,
         UserRole userRole,
-        boolean enabled,
         Instant createdAt,
         Instant updatedAt
 ) {}

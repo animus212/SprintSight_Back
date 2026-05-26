@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
@@ -14,9 +15,14 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "project_members")
 @EntityListeners(AuditingEntityListener.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Table(
+        name = "project_members",
+        indexes = {
+                @Index(name = "project_members_project_idx", columnList = "project_id")
+        }
+)
 public class ProjectMember {
     @EmbeddedId
     @EqualsAndHashCode.Include
@@ -40,4 +46,8 @@ public class ProjectMember {
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private Instant joinedAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
 }

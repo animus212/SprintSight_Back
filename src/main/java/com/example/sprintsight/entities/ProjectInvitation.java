@@ -17,10 +17,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Table(name = "project_invitations", indexes = {
-        @Index(name = "invitations_receiver_idx", columnList = "receiver_id"),
-        @Index(name = "invitations_project_idx", columnList = "project_id")
-})
+@Table(
+        name = "project_invitations",
+        indexes = {
+                @Index(name = "invitations_receiver_status_idx", columnList = "receiver_id, status"),
+                @Index(name = "invitations_project_idx",         columnList = "project_id")
+        }
+)
 public class ProjectInvitation {
     @Id
     @EqualsAndHashCode.Include
@@ -29,6 +32,7 @@ public class ProjectInvitation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)

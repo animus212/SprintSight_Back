@@ -1,9 +1,10 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.RegisterRequest;
-import com.example.sprintsight.dtos.requests.UpdateUserRequest;
+import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.UserResponse;
 import com.example.sprintsight.entities.User;
+import com.example.sprintsight.exceptions.BusinessRuleViolationException;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.UserMapper;
 import com.example.sprintsight.repositories.ProjectRepository;
 import com.example.sprintsight.repositories.UserRepository;
@@ -32,23 +33,42 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse addUser(RegisterRequest request) {
+    public UserResponse addUser(UserRequest request) {
+        if (userRepository.existsByUsername(request.username())) {
+            throw new ResourceConflictException("Username already taken");
+        }
+
+        if (userRepository.existsByEmail(request.email())) {
+            throw new ResourceConflictException("Email already registered");
+        }
+
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
 
-        return saveUser(user, "Registered new user");
+        User saved = userRepository.save(user);
+
+        log.info("Registered new user: {}", saved.getId());
+
+        return userMapper.toUserResponse(saved);
     }
 
     @Transactional
-    public UserResponse updateUser(UpdateUserRequest request, UUID id, boolean isPut) {
+    public UserResponse updateUser(UserRequest request, UUID id) {
         User user = findUser(id);
 
-        if (isPut) {
-            userMapper.updateUserFromPut(request, user);
+        if (request.username() != null
+                && !request.username().equals(user.getUsername())
+                && userRepository.existsByUsername(request.username())) {
+            throw new ResourceConflictException("Username already taken");
         }
-        else {
-            userMapper.updateUserFromPatch(request, user);
+
+        if (request.email() != null
+                && !request.email().equals(user.getEmail())
+                && userRepository.existsByEmail(request.email())) {
+            throw new ResourceConflictException("Email already registered");
         }
+
+        userMapper.updateUserFromRequest(request, user);
 
         if (request.password() != null) {
             user.setPassword(passwordEncoder.encode(request.password()));
@@ -56,7 +76,11 @@ public class UserService {
             refreshTokenService.deleteByUserId(id);
         }
 
-        return saveUser(user, "Updated user");
+        User saved = userRepository.save(user);
+
+        log.info("Updated user: {}", saved.getId());
+
+        return userMapper.toUserResponse(saved);
     }
 
     @Transactional
@@ -64,25 +88,18 @@ public class UserService {
         User user = findUser(id);
 
         if (!projectRepository.findByCreatedBy_Id(id).isEmpty()) {
-            throw new IllegalStateException(
-                    "User owns projects — reassign or delete them before removing this account"
-            );
+            throw new BusinessRuleViolationException(
+                    "User owns projects — reassign or delete them before removing this account");
         }
+
+        refreshTokenService.deleteByUserId(id);
 
         userRepository.delete(user);
 
         log.info("Deleted user: {}", id);
     }
 
-    protected User findUser(UUID id) {
+    public User findUser(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
-    }
-
-    private UserResponse saveUser(User user, String logMessage) {
-        User savedUser = userRepository.save(user);
-
-        log.info("{}: {}", logMessage, savedUser.getId());
-
-        return userMapper.toUserResponse(savedUser);
     }
 }

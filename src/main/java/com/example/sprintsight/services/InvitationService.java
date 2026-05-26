@@ -6,6 +6,7 @@ import com.example.sprintsight.entities.InvitationStatus;
 import com.example.sprintsight.entities.Project;
 import com.example.sprintsight.entities.ProjectInvitation;
 import com.example.sprintsight.entities.User;
+import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.InvitationMapper;
 import com.example.sprintsight.repositories.ProjectInvitationRepository;
 import com.example.sprintsight.repositories.ProjectMemberRepository;
@@ -41,22 +42,22 @@ public class InvitationService {
     }
 
     @Transactional
-    public InvitationResponse sendInvitation(
-            SendInvitationRequest request,
-            UUID projectId,
-            UUID senderId
-    ) {
+    public InvitationResponse sendInvitation(SendInvitationRequest request, UUID projectId, UUID senderId) {
+        if (senderId.equals(request.receiverId())) {
+            throw new IllegalArgumentException("You cannot invite yourself");
+        }
+
         User sender = userService.findUser(senderId);
         User receiver = userService.findUser(request.receiverId());
         Project project = projectService.findProject(projectId);
 
         if (projectMemberRepository.existsById_UserIdAndId_ProjectId(request.receiverId(), projectId)) {
-            throw new IllegalStateException("User is already a member of this project");
+            throw new ResourceConflictException("User is already a member of this project");
         }
 
         if (invitationRepository.existsByProject_IdAndReceiver_IdAndStatus(
                 projectId, request.receiverId(), InvitationStatus.PENDING)) {
-            throw new IllegalStateException("A pending invitation already exists for this user");
+            throw new ResourceConflictException("A pending invitation already exists for this user");
         }
 
         ProjectInvitation invitation = invitationMapper.toEntity(request);
@@ -65,24 +66,26 @@ public class InvitationService {
         invitation.setReceiver(receiver);
 
         ProjectInvitation saved = invitationRepository.save(invitation);
-        InvitationResponse response = invitationMapper.toInvitationResponse(saved);
 
         log.info("Invitation sent from {} to {} for project {}", senderId, request.receiverId(), projectId);
 
-        return response;
+        return invitationMapper.toInvitationResponse(saved);
     }
 
     @Transactional
     public InvitationResponse acceptInvitation(UUID invitationId, UUID principalId) {
         ProjectInvitation invitation = findPendingInvitation(invitationId, principalId);
 
-        invitation.setStatus(InvitationStatus.ACCEPTED);
-        invitation.setRespondedAt(Instant.now());
-        invitationRepository.save(invitation);
-
         projectMemberService.addProjectMember(
                 principalId, invitation.getIntendedRole(), invitation.getProject().getId()
         );
+
+        invitation.setStatus(InvitationStatus.ACCEPTED);
+        invitation.setRespondedAt(Instant.now());
+
+        invitationRepository.save(invitation);
+
+        log.info("Invitation {} accepted by {}", invitationId, principalId);
 
         return invitationMapper.toInvitationResponse(invitation);
     }
@@ -93,7 +96,10 @@ public class InvitationService {
 
         invitation.setStatus(InvitationStatus.REJECTED);
         invitation.setRespondedAt(Instant.now());
+
         invitationRepository.save(invitation);
+
+        log.info("Invitation {} rejected by {}", invitationId, principalId);
 
         return invitationMapper.toInvitationResponse(invitation);
     }
@@ -107,7 +113,7 @@ public class InvitationService {
         }
 
         if (invitation.getStatus() != InvitationStatus.PENDING) {
-            throw new IllegalStateException("Invitation has already been responded to");
+            throw new ResourceConflictException("Invitation has already been responded to");
         }
 
         return invitation;

@@ -1,7 +1,6 @@
 package com.example.sprintsight.services;
 
-import com.example.sprintsight.dtos.requests.CreateProjectRequest;
-import com.example.sprintsight.dtos.requests.UpdateProjectRequest;
+import com.example.sprintsight.dtos.requests.ProjectRequest;
 import com.example.sprintsight.dtos.responses.ProjectResponse;
 import com.example.sprintsight.entities.Project;
 import com.example.sprintsight.entities.User;
@@ -22,12 +21,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProjectService {
     private final UserService userService;
+    private final IssueConfigurationService issueConfigurationService;
     private final ProjectMapper projectMapper;
     private final ProjectRepository projectRepository;
+    private final ProjectAuthorizationService authorizationService;
 
     @Transactional(readOnly = true)
-    public ProjectResponse getProject(UUID id) {
-        return projectMapper.toProjectResponse(findProject(id));
+    public ProjectResponse getProject(UUID id, UUID principalId) {
+        authorizationService.getMemberOrThrow(principalId, id);
+
+        Project project = projectRepository.findWithCreatedBy(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+
+        return projectMapper.toProjectResponse(project);
     }
 
     @Transactional(readOnly = true)
@@ -47,34 +53,34 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse addProject(CreateProjectRequest request, UUID principalId) {
+    public ProjectResponse addProject(ProjectRequest request, UUID principalId) {
         User user = userService.findUser(principalId);
 
         Project project = projectMapper.toEntity(request);
         project.setCreatedBy(user);
 
-        return saveProject(project, "Create project");
+        Project saved = projectRepository.save(project);
+
+        issueConfigurationService.seedDefaults(saved);
+
+        log.info("Created project {}", saved.getId());
+
+        return projectMapper.toProjectResponse(saved);
     }
 
     @Transactional
-    public ProjectResponse updateProject(
-            UpdateProjectRequest request,
-            UUID projectId,
-            UUID principalId,
-            boolean isPut
-    ) {
+    public ProjectResponse updateProject(ProjectRequest request, UUID projectId, UUID principalId) {
         Project project = findProject(projectId);
 
         verifyOwnership(project, principalId);
 
-        if (isPut) {
-            projectMapper.updateProjectFromPut(request, project);
-        }
-        else {
-            projectMapper.updateProjectFromPatch(request, project);
-        }
+        projectMapper.updateProjectFromRequest(request, project);
 
-        return saveProject(project, "Updated project");
+        Project saved = projectRepository.save(project);
+
+        log.info("Updated project {}", saved.getId());
+
+        return projectMapper.toProjectResponse(saved);
     }
 
     @Transactional
@@ -88,21 +94,14 @@ public class ProjectService {
         log.info("Deleted project: {}", projectId);
     }
 
-    protected Project findProject(UUID id) {
-        return projectRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Project not found"));
+    public Project findProject(UUID id) {
+        return projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
     }
 
     private void verifyOwnership(Project project, UUID principalId) {
         if (!project.getCreatedBy().getId().equals(principalId)) {
             throw new AccessDeniedException("You do not have permission to modify this project");
         }
-    }
-
-    private ProjectResponse saveProject(Project project, String logMessage) {
-        Project savedProject = projectRepository.save(project);
-
-        log.info("{}: {}", logMessage, savedProject.getId());
-
-        return projectMapper.toProjectResponse(savedProject);
     }
 }
