@@ -30,7 +30,7 @@ public class ProjectService {
     public ProjectResponse getProject(UUID id, UUID principalId) {
         authorizationService.getMemberOrThrow(principalId, id);
 
-        Project project = projectRepository.findWithCreatedByById(id)
+        Project project = projectRepository.findWithCreatedBy(id)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found"));
 
         return projectMapper.toProjectResponse(project);

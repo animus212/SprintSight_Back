@@ -1,6 +1,7 @@
 package com.example.sprintsight.repositories;
 
 import com.example.sprintsight.entities.Project;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -15,8 +16,8 @@ import java.util.UUID;
 
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
-    @EntityGraph(attributePaths = {"createdBy"})
-    Optional<Project> findWithCreatedByById(UUID id);
+    @Query("SELECT p FROM Project p JOIN FETCH p.createdBy WHERE p.id = :id")
+    Optional<Project> findWithCreatedBy(@Param("id") UUID id);
 
     List<Project> findByCreatedBy_Id(UUID userId);
     Page<Project> findByCreatedBy_Id(UUID userId, Pageable pageable);

@@ -10,10 +10,7 @@ import com.example.sprintsight.entities.*;
 import com.example.sprintsight.exceptions.BusinessRuleViolationException;
 import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.IssueConfigurationMapper;
-import com.example.sprintsight.repositories.IssuePriorityConfigurationRepository;
-import com.example.sprintsight.repositories.IssueRepository;
-import com.example.sprintsight.repositories.IssueStatusConfigurationRepository;
-import com.example.sprintsight.repositories.IssueTypeConfigurationRepository;
+import com.example.sprintsight.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +29,7 @@ public class IssueConfigurationService {
     private final IssuePriorityConfigurationRepository priorityRepository;
     private final IssueStatusConfigurationRepository statusRepository;
     private final IssueRepository issueRepository;
-    private final ProjectService projectService;
+    private final ProjectRepository projectRepository;
     private final ProjectAuthorizationService authorizationService;
     private final IssueConfigurationMapper mapper;
 
@@ -60,7 +57,7 @@ public class IssueConfigurationService {
 
         IssueTypeConfiguration configuration = mapper.toTypeEntity(request);
 
-        configuration.setProject(projectService.findProject(projectId));
+        configuration.setProject(findProject(projectId));
 
         return mapper.toTypeResponse(typeRepository.save(configuration));
     }
@@ -141,7 +138,7 @@ public class IssueConfigurationService {
 
         IssuePriorityConfiguration configuration = mapper.toPriorityEntity(request);
 
-        configuration.setProject(projectService.findProject(projectId));
+        configuration.setProject(findProject(projectId));
 
         return mapper.toPriorityResponse(priorityRepository.save(configuration));
     }
@@ -222,7 +219,7 @@ public class IssueConfigurationService {
 
         IssueStatusConfiguration configuration = mapper.toStatusEntity(request);
 
-        configuration.setProject(projectService.findProject(projectId));
+        configuration.setProject(findProject(projectId));
 
         return mapper.toStatusResponse(statusRepository.save(configuration));
     }
@@ -414,5 +411,10 @@ public class IssueConfigurationService {
         c.setDefault(isDefault);
 
         return c;
+    }
+
+    public Project findProject(UUID id) {
+        return projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
     }
 }
