@@ -1,6 +1,7 @@
 package com.example.sprintsight.services;
 
 import com.example.sprintsight.dtos.requests.UserRequest;
+import com.example.sprintsight.dtos.responses.ImageUrlResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.exceptions.BusinessRuleViolationException;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ProjectRepository projectRepository;
     private final RefreshTokenService refreshTokenService;
+    private final CloudinaryImageService cloudinaryImageService;
 
     @Transactional(readOnly = true)
     public UserResponse getUser(UUID id) {
@@ -94,9 +97,43 @@ public class UserService {
 
         refreshTokenService.deleteByUserId(id);
 
+        cloudinaryImageService.deleteByUrl(user.getProfilePictureUrl());
+
         userRepository.delete(user);
 
         log.info("Deleted user: {}", id);
+    }
+
+    @Transactional
+    public ImageUrlResponse updateProfilePicture(UUID userId, MultipartFile file) {
+        User user = findUser(userId);
+        String oldUrl = user.getProfilePictureUrl();
+
+        String newUrl = cloudinaryImageService.uploadAvatar(file).url();
+        user.setProfilePictureUrl(newUrl);
+        userRepository.save(user);
+
+        cloudinaryImageService.deleteByUrl(oldUrl);
+
+        log.info("Updated profile picture for user {}", userId);
+        return new ImageUrlResponse(newUrl);
+    }
+
+
+    @Transactional
+    public void deleteProfilePicture(UUID userId) {
+        User user = findUser(userId);
+        String oldUrl = user.getProfilePictureUrl();
+
+        if (oldUrl == null || oldUrl.isBlank()) {
+            return;
+        }
+
+        user.setProfilePictureUrl(null);
+        userRepository.save(user);
+
+        cloudinaryImageService.deleteByUrl(oldUrl);
+        log.info("Removed profile picture for user {}", userId);
     }
 
     public User findUser(UUID id) {

@@ -8,6 +8,7 @@ public record ProjectResponse(
         String name,
         String description,
         UserSummaryResponse createdBy,
+        String imageUrl,
         Instant createdAt,
         Instant updatedAt
 ) {}

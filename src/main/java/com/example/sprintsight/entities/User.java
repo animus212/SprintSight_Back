@@ -63,4 +63,7 @@ public class User {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "profile_picture_url", length = 512)
+    private String profilePictureUrl;
 }

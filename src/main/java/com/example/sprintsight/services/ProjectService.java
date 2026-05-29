@@ -1,8 +1,10 @@
 package com.example.sprintsight.services;
 
 import com.example.sprintsight.dtos.requests.ProjectRequest;
+import com.example.sprintsight.dtos.responses.ImageUrlResponse;
 import com.example.sprintsight.dtos.responses.ProjectResponse;
 import com.example.sprintsight.entities.Project;
+import com.example.sprintsight.entities.ProjectRole;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.mappers.ProjectMapper;
 import com.example.sprintsight.repositories.ProjectRepository;
@@ -12,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +28,7 @@ public class ProjectService {
     private final ProjectMapper projectMapper;
     private final ProjectRepository projectRepository;
     private final ProjectAuthorizationService authorizationService;
+    private final CloudinaryImageService cloudinaryImageService;
 
     @Transactional(readOnly = true)
     public ProjectResponse getProject(UUID id, UUID principalId) {
@@ -89,9 +93,48 @@ public class ProjectService {
 
         verifyOwnership(project, principalId);
 
+        cloudinaryImageService.deleteByUrl(project.getImageUrl());
+
         projectRepository.delete(project);
 
         log.info("Deleted project: {}", projectId);
+    }
+
+    @Transactional
+    public ImageUrlResponse updateProjectImage(UUID projectId, MultipartFile file, UUID principalId) {
+        authorizationService.requireAnyRole(principalId, projectId,
+                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
+
+        Project project = findProject(projectId);
+        String oldUrl = project.getImageUrl();
+
+        String newUrl = cloudinaryImageService.uploadProjectImage(file).url();
+        project.setImageUrl(newUrl);
+        projectRepository.save(project);
+
+        cloudinaryImageService.deleteByUrl(oldUrl);
+
+        log.info("Updated image for project {} by {}", projectId, principalId);
+        return new ImageUrlResponse(newUrl);
+    }
+
+    @Transactional
+    public void deleteProjectImage(UUID projectId, UUID principalId) {
+        authorizationService.requireAnyRole(principalId, projectId,
+                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
+
+        Project project = findProject(projectId);
+        String oldUrl = project.getImageUrl();
+
+        if (oldUrl == null || oldUrl.isBlank()) {
+            return;
+        }
+
+        project.setImageUrl(null);
+        projectRepository.save(project);
+
+        cloudinaryImageService.deleteByUrl(oldUrl);
+        log.info("Removed image for project {} by {}", projectId, principalId);
     }
 
     public Project findProject(UUID id) {

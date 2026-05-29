@@ -48,4 +48,7 @@ public class Project {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectInvitation> invitations;
+
+    @Column(name = "image_url", length = 512)
+    private String imageUrl;
 }
