@@ -4,6 +4,7 @@ import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.InvitationResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
+import com.example.sprintsight.dtos.responses.UserSummaryResponse;
 import com.example.sprintsight.dtos.validation.ValidationGroups;
 import com.example.sprintsight.security.JwtService;
 import com.example.sprintsight.security.UserPrincipal;
@@ -36,6 +37,16 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(new ApiResponse<>("User retrieved successfully", userService.getUser(id)));
+    }
+
+    @GetMapping("/{username}")
+    public ResponseEntity<ApiResponse<UserSummaryResponse>> getUserByUsername(
+            @PathVariable String username,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(
+                new ApiResponse<>("User retrieved successfully", userService.getUserByUsername(username))
+        );
     }
 
     @PutMapping("/{id}")

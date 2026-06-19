@@ -3,6 +3,7 @@ package com.example.sprintsight.services;
 import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.ImageUrlResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
+import com.example.sprintsight.dtos.responses.UserSummaryResponse;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.exceptions.BusinessRuleViolationException;
 import com.example.sprintsight.exceptions.ResourceConflictException;
@@ -33,6 +34,12 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUser(UUID id) {
         return userMapper.toUserResponse(findUser(id));
+    }
+
+    @Transactional(readOnly = true)
+    public UserSummaryResponse getUserByUsername(String username) {
+        return userMapper.toUserSummaryResponse(userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found")));
     }
 
     @Transactional
