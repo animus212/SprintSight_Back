@@ -30,7 +30,7 @@ public class UserController {
     private final UserService userService;
     private final InvitationService invitationService;
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     @PreAuthorize("#principal.id.equals(#id)")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(
             @PathVariable UUID id,
@@ -39,7 +39,7 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse<>("User retrieved successfully", userService.getUser(id)));
     }
 
-    @GetMapping("/{username}")
+    @GetMapping("/username/{username}")
     public ResponseEntity<ApiResponse<UserSummaryResponse>> getUserByUsername(
             @PathVariable String username,
             @AuthenticationPrincipal UserPrincipal principal
