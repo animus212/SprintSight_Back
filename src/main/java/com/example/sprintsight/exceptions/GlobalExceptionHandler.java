@@ -293,12 +293,29 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ApiError> handleMaxUploadSize(MaxUploadSizeExceededException ex,
-                                                        HttpServletRequest request) {
-        return build(HttpStatus.CONTENT_TOO_LARGE,
+//    @ExceptionHandler(MaxUploadSizeExceededException.class)
+//    public ResponseEntity<ApiError> handleMaxUploadSize(MaxUploadSizeExceededException ex,
+//                                                        HttpServletRequest request) {
+//        return build(HttpStatus.CONTENT_TOO_LARGE,
+//                "Uploaded file is too large. Maximum size is 5MB.",
+//                request);
+//    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        ApiError body = buildPayload(
+                HttpStatus.CONTENT_TOO_LARGE,
                 "Uploaded file is too large. Maximum size is 5MB.",
-                request);
+                requestPath(request),
+                requestMethod(request),
+                null);
+
+        return new ResponseEntity<>(body, HttpStatus.CONTENT_TOO_LARGE);
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message, HttpServletRequest request) {

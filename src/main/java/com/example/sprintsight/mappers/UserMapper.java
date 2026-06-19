@@ -18,6 +18,7 @@ public interface UserMapper {
     @Mapping(target = "enabled",   ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "profilePictureUrl", ignore = true)
     User toEntity(UserRequest request);
 
     @Mapping(target = "id",        ignore = true)
@@ -26,6 +27,7 @@ public interface UserMapper {
     @Mapping(target = "userRole",  ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "profilePictureUrl", ignore = true)
     void updateUserFromRequest(UserRequest request, @MappingTarget User user);
 
     UserResponse toUserResponse(User user);

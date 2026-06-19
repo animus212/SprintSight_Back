@@ -18,6 +18,7 @@ public interface ProjectMapper {
     @Mapping(target = "updatedAt",   ignore = true)
     @Mapping(target = "members",     ignore = true)
     @Mapping(target = "invitations", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
     Project toEntity(ProjectRequest request);
 
     @Mapping(target = "id",          ignore = true)
@@ -26,6 +27,7 @@ public interface ProjectMapper {
     @Mapping(target = "updatedAt",   ignore = true)
     @Mapping(target = "members",     ignore = true)
     @Mapping(target = "invitations", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
     void updateProjectFromRequest(ProjectRequest request, @MappingTarget Project project);
 
     ProjectResponse toProjectResponse(Project project);
