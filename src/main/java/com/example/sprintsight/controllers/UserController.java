@@ -85,4 +85,14 @@ public class UserController {
                 "Invitations retrieved successfully",
                 invitationService.getPendingInvitations(userId)));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> searchUsers(
+            @RequestParam("username") String username,
+            @RequestParam("projectId") UUID projectId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<UserSummaryResponse> results =
+                userService.searchInvitableUsers(username, projectId, principal.getId());
+        return ResponseEntity.ok(new ApiResponse<>("Search completed", results));
+    }
 }
