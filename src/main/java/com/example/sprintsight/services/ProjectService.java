@@ -29,6 +29,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectAuthorizationService authorizationService;
     private final CloudinaryImageService cloudinaryImageService;
+    private final ProjectMemberService projectMemberService;
 
     @Transactional(readOnly = true)
     public ProjectResponse getProject(UUID id, UUID principalId) {
@@ -68,6 +69,8 @@ public class ProjectService {
         issueConfigurationService.seedDefaults(saved);
 
         log.info("Created project {}", saved.getId());
+
+        projectMemberService.addProjectMember(user.getId(), ProjectRole.PRODUCT_OWNER, saved.getId());
 
         return projectMapper.toProjectResponse(saved);
     }
