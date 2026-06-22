@@ -5,7 +5,9 @@ import com.example.sprintsight.dtos.responses.IssueResponse;
 import com.example.sprintsight.dtos.responses.IssueSummaryResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.mappers.IssueMapper;
-import com.example.sprintsight.repositories.*;
+import com.example.sprintsight.repositories.ComponentRepository;
+import com.example.sprintsight.repositories.IssueEventRepository;
+import com.example.sprintsight.repositories.IssueRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
