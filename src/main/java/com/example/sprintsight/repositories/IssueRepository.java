@@ -50,4 +50,6 @@ public interface IssueRepository extends JpaRepository<Issue, UUID> {
           )
     """)
     List<Issue> findBacklogByProject_Id(@Param("projectId") UUID projectId);
+
+    List<Issue> findByComponents_Id(UUID componentId);
 }

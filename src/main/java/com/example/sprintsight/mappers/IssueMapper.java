@@ -58,4 +58,7 @@ public interface IssueMapper {
                 .map(cm::toComponentResponse)
                 .toList();
     }
+
+    @Mapping(target = "components", source = "components", qualifiedByName = "sortedComponents")
+    List<IssueResponse> toIssueResponses(List<Issue> issues);
 }
