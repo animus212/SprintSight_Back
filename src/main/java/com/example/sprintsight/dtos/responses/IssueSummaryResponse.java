@@ -7,6 +7,7 @@ import java.util.UUID;
 public record IssueSummaryResponse(
         UUID id,
         String title,
+        String description,
         IssueTypeConfigurationResponse type,
         IssuePriorityConfigurationResponse priority,
         IssueStatusConfigurationResponse status,
