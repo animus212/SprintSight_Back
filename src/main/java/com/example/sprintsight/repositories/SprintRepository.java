@@ -18,6 +18,7 @@ public interface SprintRepository extends JpaRepository<Sprint, UUID> {
     Page<Sprint> findByProject_Id(UUID projectId, Pageable pageable);
     List<Sprint> findByProject_IdAndStatus(UUID projectId, SprintStatus status);
     boolean existsByProject_IdAndStatus(UUID projectId, SprintStatus status);
+
     @Query(value = "SELECT extract_sprint_input(:id)::text", nativeQuery = true)
     String getSprintFeatures(@Param("id") UUID id);
 }
