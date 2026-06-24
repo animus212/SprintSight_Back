@@ -3,7 +3,9 @@ package com.example.sprintsight.services;
 import com.example.sprintsight.dtos.requests.CloseSprintRequest;
 import com.example.sprintsight.dtos.requests.SprintRequest;
 import com.example.sprintsight.dtos.requests.StartSprintRequest;
-import com.example.sprintsight.dtos.responses.*;
+import com.example.sprintsight.dtos.responses.SprintIssueResponse;
+import com.example.sprintsight.dtos.responses.SprintResponse;
+import com.example.sprintsight.dtos.responses.SprintSummaryResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.exceptions.BusinessRuleViolationException;
 import com.example.sprintsight.exceptions.ResourceConflictException;
@@ -14,8 +16,10 @@ import com.example.sprintsight.repositories.SprintRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,6 +35,7 @@ public class SprintService {
     private final ProjectService projectService;
     private final ProjectAuthorizationService authorizationService;
     private final SprintMapper sprintMapper;
+    private final RestClient http = RestClient.create();
 
     @Transactional(readOnly = true)
     public List<SprintSummaryResponse> getSprints(UUID projectId, UUID principalId) {
@@ -259,5 +264,18 @@ public class SprintService {
                 (int) completedCount,
                 (int) addedAfterStartCt
         );
+    }
+
+    public String predict(UUID sprintId) {
+
+        String featuresJson = sprintRepository.getSprintFeatures(sprintId);
+
+        return http.post()
+                .uri("http://localhost:8000/predict")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(featuresJson)
+                .retrieve()
+                .body(String.class);
+
     }
 }

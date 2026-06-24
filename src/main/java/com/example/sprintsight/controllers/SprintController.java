@@ -114,4 +114,13 @@ public class SprintController {
 
         return ResponseEntity.ok(new ApiResponse<>("Issue removed from sprint", null));
     }
+
+    @GetMapping("/{sprintId}/prediction")
+    public String getPrediction(
+            @PathVariable UUID projectId,
+            @PathVariable UUID sprintId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return sprintService.predict(sprintId);
+    }
 }
