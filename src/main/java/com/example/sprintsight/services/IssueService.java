@@ -172,7 +172,7 @@ public class IssueService {
     }
 
     private Set<Component> resolveComponents(Set<UUID> componentIds, UUID projectId) {
-        if (componentIds.isEmpty()) return Set.of();
+        if (componentIds.isEmpty()) return new HashSet<>();
 
         Set<Component> found = componentRepository.findAllByIdInAndProject_Id(componentIds, projectId);
 
