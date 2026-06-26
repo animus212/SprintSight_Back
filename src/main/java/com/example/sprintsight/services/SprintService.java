@@ -62,6 +62,8 @@ public class SprintService {
 
         Sprint sprint = sprintMapper.toEntity(request);
         sprint.setProject(projectService.findProject(projectId));
+        sprint.setStartDate(request.startDate());
+        sprint.setEndDate(request.endDate());
 
         Sprint saved = sprintRepository.save(sprint);
 
