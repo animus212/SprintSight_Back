@@ -4,6 +4,7 @@ import com.example.sprintsight.dtos.requests.UserRequest;
 import com.example.sprintsight.dtos.responses.ApiResponse;
 import com.example.sprintsight.dtos.responses.InvitationResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
+import com.example.sprintsight.dtos.responses.UserSummaryResponse;
 import com.example.sprintsight.dtos.validation.ValidationGroups;
 import com.example.sprintsight.security.JwtService;
 import com.example.sprintsight.security.UserPrincipal;
@@ -29,13 +30,23 @@ public class UserController {
     private final UserService userService;
     private final InvitationService invitationService;
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     @PreAuthorize("#principal.id.equals(#id)")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(new ApiResponse<>("User retrieved successfully", userService.getUser(id)));
+    }
+
+    @GetMapping("/username/{username}")
+    public ResponseEntity<ApiResponse<UserSummaryResponse>> getUserByUsername(
+            @PathVariable String username,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(
+                new ApiResponse<>("User retrieved successfully", userService.getUserByUsername(username))
+        );
     }
 
     @PutMapping("/{id}")
@@ -73,5 +84,15 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Invitations retrieved successfully",
                 invitationService.getPendingInvitations(userId)));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> searchUsers(
+            @RequestParam("username") String username,
+            @RequestParam("projectId") UUID projectId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<UserSummaryResponse> results =
+                userService.searchInvitableUsers(username, projectId, principal.getId());
+        return ResponseEntity.ok(new ApiResponse<>("Search completed", results));
     }
 }

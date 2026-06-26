@@ -1,9 +1,13 @@
 package com.example.sprintsight.services;
 
+import com.example.sprintsight.clients.PredictionServiceClient;
 import com.example.sprintsight.dtos.requests.CloseSprintRequest;
 import com.example.sprintsight.dtos.requests.SprintRequest;
 import com.example.sprintsight.dtos.requests.StartSprintRequest;
-import com.example.sprintsight.dtos.responses.*;
+import com.example.sprintsight.dtos.responses.PredictionResponse;
+import com.example.sprintsight.dtos.responses.SprintIssueResponse;
+import com.example.sprintsight.dtos.responses.SprintResponse;
+import com.example.sprintsight.dtos.responses.SprintSummaryResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.exceptions.BusinessRuleViolationException;
 import com.example.sprintsight.exceptions.ResourceConflictException;
@@ -31,6 +35,7 @@ public class SprintService {
     private final ProjectService projectService;
     private final ProjectAuthorizationService authorizationService;
     private final SprintMapper sprintMapper;
+    private final PredictionServiceClient predictionServiceClient;
 
     @Transactional(readOnly = true)
     public List<SprintSummaryResponse> getSprints(UUID projectId, UUID principalId) {
@@ -57,6 +62,8 @@ public class SprintService {
 
         Sprint sprint = sprintMapper.toEntity(request);
         sprint.setProject(projectService.findProject(projectId));
+        sprint.setStartDate(request.startDate());
+        sprint.setEndDate(request.endDate());
 
         Sprint saved = sprintRepository.save(sprint);
 
@@ -197,6 +204,12 @@ public class SprintService {
         sprintIssueRepository.save(entry);
 
         log.info("Removed issue {} from sprint {}", issueId, sprintId);
+    }
+
+    public PredictionResponse predict(UUID sprintId) {
+        String featuresJson = sprintRepository.getSprintFeatures(sprintId);
+
+        return predictionServiceClient.getPrediction(sprintId, featuresJson);
     }
 
     public Sprint findSprint(UUID sprintId) {

@@ -17,7 +17,7 @@ public class ProjectAuthorizationService {
     private final ProjectMemberRepository projectMemberRepository;
 
     public ProjectMember getMemberOrThrow(UUID userId, UUID projectId) {
-        return projectMemberRepository.findById(new ProjectMemberId(projectId, userId))
+        return projectMemberRepository.findById(new ProjectMemberId(userId, projectId))
                 .orElseThrow(() -> new AccessDeniedException("You are not a member of this project"));
     }
 
@@ -30,7 +30,7 @@ public class ProjectAuthorizationService {
     }
 
     public boolean hasAnyRole(UUID userId, UUID projectId, ProjectRole... roles) {
-        return projectMemberRepository.findById(new ProjectMemberId(projectId, userId))
+        return projectMemberRepository.findById(new ProjectMemberId(userId, projectId))
                 .map(m -> Arrays.stream(roles).anyMatch(r -> r == m.getProjectRole()))
                 .orElse(false);
     }

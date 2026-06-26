@@ -3,10 +3,7 @@ package com.example.sprintsight.controllers;
 import com.example.sprintsight.dtos.requests.CloseSprintRequest;
 import com.example.sprintsight.dtos.requests.SprintRequest;
 import com.example.sprintsight.dtos.requests.StartSprintRequest;
-import com.example.sprintsight.dtos.responses.ApiResponse;
-import com.example.sprintsight.dtos.responses.SprintIssueResponse;
-import com.example.sprintsight.dtos.responses.SprintResponse;
-import com.example.sprintsight.dtos.responses.SprintSummaryResponse;
+import com.example.sprintsight.dtos.responses.*;
 import com.example.sprintsight.security.UserPrincipal;
 import com.example.sprintsight.services.SprintService;
 import jakarta.validation.Valid;
@@ -113,5 +110,14 @@ public class SprintController {
         sprintService.removeIssueFromSprint(sprintId, issueId, principal.getId());
 
         return ResponseEntity.ok(new ApiResponse<>("Issue removed from sprint", null));
+    }
+
+    @GetMapping("/{sprintId}/prediction")
+    public ResponseEntity<ApiResponse<PredictionResponse>> getPrediction(
+            @PathVariable UUID projectId,
+            @PathVariable UUID sprintId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>("Prediction successful", sprintService.predict(sprintId)));
     }
 }

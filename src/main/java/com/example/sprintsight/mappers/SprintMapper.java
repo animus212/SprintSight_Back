@@ -66,7 +66,7 @@ public interface SprintMapper {
                 sprint.getId(),
                 sprint.getName(),
                 sprint.getGoal(),
-                new ProjectSummaryResponse(sprint.getProject().getId(), sprint.getProject().getName()),
+                new ProjectSummaryResponse(sprint.getProject().getId(), sprint.getProject().getName(), sprint.getProject().getImageUrl()),
                 sprint.getStatus(),
                 sprint.getStartDate(),
                 sprint.getEndDate(),

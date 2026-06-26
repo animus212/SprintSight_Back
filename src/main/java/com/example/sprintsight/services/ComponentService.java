@@ -2,11 +2,14 @@ package com.example.sprintsight.services;
 
 import com.example.sprintsight.dtos.requests.ComponentRequest;
 import com.example.sprintsight.dtos.responses.ComponentResponse;
+import com.example.sprintsight.dtos.responses.IssueResponse;
 import com.example.sprintsight.entities.*;
 import com.example.sprintsight.exceptions.BusinessRuleViolationException;
 import com.example.sprintsight.exceptions.ResourceConflictException;
 import com.example.sprintsight.mappers.ComponentMapper;
+import com.example.sprintsight.mappers.IssueMapper;
 import com.example.sprintsight.repositories.ComponentRepository;
+import com.example.sprintsight.repositories.IssueRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,15 +26,26 @@ public class ComponentService {
     private final ProjectService projectService;
     private final ProjectAuthorizationService authorizationService;
     private final ComponentMapper componentMapper;
+    private final IssueMapper issueMapper;
+    private final IssueRepository issueRepository;
 
     @Transactional(readOnly = true)
     public List<ComponentResponse> getComponents(UUID projectId, UUID principalId) {
         authorizationService.getMemberOrThrow(principalId, projectId);
 
-        return componentRepository.findByProject_Id(projectId)
+        List<ComponentResponse> componentResponses = componentRepository.findByProject_Id(projectId)
                 .stream()
                 .map(componentMapper::toComponentResponse)
                 .toList();
+
+        for(ComponentResponse component : componentResponses){
+            List<IssueResponse> issueResponses =
+                    issueMapper.toIssueResponses(
+                            issueRepository.findByComponents_Id(component.id())
+                    );
+            component.issues().addAll(issueResponses);
+        }
+        return componentResponses;
     }
 
     @Transactional

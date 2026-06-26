@@ -22,5 +22,6 @@ public interface ComponentMapper {
     @Mapping(target = "updatedAt", ignore = true)
     void updateComponentFromRequest(ComponentRequest request, @MappingTarget Component component);
 
+    @Mapping(target = "issues", ignore = true)
     ComponentResponse toComponentResponse(Component component);
 }

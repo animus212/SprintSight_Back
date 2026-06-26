@@ -2,6 +2,7 @@ package com.example.sprintsight.mappers;
 
 import com.example.sprintsight.dtos.requests.IssueRequest;
 import com.example.sprintsight.dtos.responses.ComponentResponse;
+import com.example.sprintsight.dtos.responses.ComponentSummaryResponse;
 import com.example.sprintsight.dtos.responses.IssueResponse;
 import com.example.sprintsight.dtos.responses.IssueSummaryResponse;
 import com.example.sprintsight.entities.Component;
@@ -11,6 +12,7 @@ import org.mapstruct.*;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Mapper(
         componentModel = "spring",
@@ -45,7 +47,20 @@ public interface IssueMapper {
     @Mapping(target = "components", source = "components", qualifiedByName = "sortedComponents")
     IssueResponse toIssueResponse(Issue issue);
 
+    @Mapping(target = "components", source = "components", qualifiedByName = "toComponentSummaryList")
     IssueSummaryResponse toIssueSummaryResponse(Issue issue);
+
+    @Named("toComponentSummary")
+    default ComponentSummaryResponse toComponentSummary(Component c) {
+        return new ComponentSummaryResponse(c.getId(), c.getName(),c.getDescription());
+    }
+
+    @Named("toComponentSummaryList")
+    default Set<ComponentSummaryResponse> toComponentSummaryList(Set<Component> components) {
+        return components.stream()
+                .map(this::toComponentSummary)
+                .collect(Collectors.toSet());
+    }
 
     @Named("sortedComponents")
     default List<ComponentResponse> mapComponentsSorted(Set<Component> components) {
@@ -58,4 +73,7 @@ public interface IssueMapper {
                 .map(cm::toComponentResponse)
                 .toList();
     }
+
+    @Mapping(target = "components", source = "components", qualifiedByName = "sortedComponents")
+    List<IssueResponse> toIssueResponses(List<Issue> issues);
 }

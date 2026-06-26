@@ -1,7 +1,10 @@
 package com.example.sprintsight.services;
 
 import com.example.sprintsight.dtos.requests.UserRequest;
+import com.example.sprintsight.dtos.responses.ImageUrlResponse;
 import com.example.sprintsight.dtos.responses.UserResponse;
+import com.example.sprintsight.dtos.responses.UserSummaryResponse;
+import com.example.sprintsight.entities.ProjectRole;
 import com.example.sprintsight.entities.User;
 import com.example.sprintsight.exceptions.BusinessRuleViolationException;
 import com.example.sprintsight.exceptions.ResourceConflictException;
@@ -11,10 +14,14 @@ import com.example.sprintsight.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.parser.Authorization;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -22,14 +29,24 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
     private final UserMapper userMapper;
+    private static final int MAX_RESULTS = 10;
     private final UserRepository userRepository;
+    private static final int MIN_QUERY_LENGTH = 3;
     private final PasswordEncoder passwordEncoder;
     private final ProjectRepository projectRepository;
     private final RefreshTokenService refreshTokenService;
+    private final CloudinaryImageService cloudinaryImageService;
+    private final ProjectAuthorizationService authorizationService;
 
     @Transactional(readOnly = true)
     public UserResponse getUser(UUID id) {
         return userMapper.toUserResponse(findUser(id));
+    }
+
+    @Transactional(readOnly = true)
+    public UserSummaryResponse getUserByUsername(String username) {
+        return userMapper.toUserSummaryResponse(userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found")));
     }
 
     @Transactional
@@ -94,12 +111,80 @@ public class UserService {
 
         refreshTokenService.deleteByUserId(id);
 
+        cloudinaryImageService.deleteByUrl(user.getProfilePictureUrl());
+
         userRepository.delete(user);
 
         log.info("Deleted user: {}", id);
     }
 
+    @Transactional
+    public ImageUrlResponse updateProfilePicture(UUID userId, MultipartFile file) {
+        User user = findUser(userId);
+        String oldUrl = user.getProfilePictureUrl();
+
+        String newUrl = cloudinaryImageService.uploadAvatar(file).url();
+        user.setProfilePictureUrl(newUrl);
+        userRepository.save(user);
+
+        cloudinaryImageService.deleteByUrl(oldUrl);
+
+        log.info("Updated profile picture for user {}", userId);
+        return new ImageUrlResponse(newUrl);
+    }
+
+
+    @Transactional
+    public void deleteProfilePicture(UUID userId) {
+        User user = findUser(userId);
+        String oldUrl = user.getProfilePictureUrl();
+
+        if (oldUrl == null || oldUrl.isBlank()) {
+            return;
+        }
+
+        user.setProfilePictureUrl(null);
+        userRepository.save(user);
+
+        cloudinaryImageService.deleteByUrl(oldUrl);
+        log.info("Removed profile picture for user {}", userId);
+    }
+
     public User findUser(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserSummaryResponse> searchInvitableUsers(
+            String query, UUID projectId, UUID principalId) {
+
+
+        authorizationService.requireAnyRole(principalId, projectId,
+                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
+
+        if (query == null) {
+            return List.of();
+        }
+        String trimmed = query.trim();
+        if (trimmed.length() < MIN_QUERY_LENGTH) {
+            return List.of();
+        }
+
+        String escaped = escapeLikePattern(trimmed.toLowerCase());
+        String prefixPattern = escaped + "%";
+
+        return userRepository.searchInvitableUsers(
+                        prefixPattern, projectId, principalId,
+                        PageRequest.of(0, MAX_RESULTS))
+                .stream()
+                .map(userMapper::toUserSummaryResponse)
+                .toList();
+    }
+
+    private String escapeLikePattern(String input) {
+        return input
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 }

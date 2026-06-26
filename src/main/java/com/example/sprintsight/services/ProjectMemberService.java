@@ -53,7 +53,7 @@ public class ProjectMemberService {
         Project projectRef = entityManager.getReference(Project.class, projectId);
 
         ProjectMember projectMember = new ProjectMember();
-        projectMember.setId(new ProjectMemberId(projectId, userId));
+        projectMember.setId(new ProjectMemberId(userId, projectId));
         projectMember.setUser(userRef);
         projectMember.setProject(projectRef);
         projectMember.setProjectRole(projectRole);
@@ -108,7 +108,7 @@ public class ProjectMemberService {
     }
 
     private ProjectMember findProjectMember(UUID userId, UUID projectId) {
-        return projectMemberRepository.findById(new ProjectMemberId(projectId, userId))
+        return projectMemberRepository.findById(new ProjectMemberId(userId, projectId))
                 .orElseThrow(() -> new EntityNotFoundException("Project member not found"));
     }
 }

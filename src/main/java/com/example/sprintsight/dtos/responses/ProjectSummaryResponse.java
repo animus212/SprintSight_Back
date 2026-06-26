@@ -4,5 +4,6 @@ import java.util.UUID;
 
 public record ProjectSummaryResponse(
         UUID id,
-        String name
+        String name,
+        String imageUrl
 ) {}

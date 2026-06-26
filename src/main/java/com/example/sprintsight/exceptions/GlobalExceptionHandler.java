@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -284,6 +285,37 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("Unhandled exception at {} {}", request.getMethod(), request.getRequestURI(), ex);
 
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request);
+    }
+
+    @ExceptionHandler(InvalidImageException.class)
+    public ResponseEntity<ApiError> handleInvalidImage(InvalidImageException ex,
+                                                       HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+//    @ExceptionHandler(MaxUploadSizeExceededException.class)
+//    public ResponseEntity<ApiError> handleMaxUploadSize(MaxUploadSizeExceededException ex,
+//                                                        HttpServletRequest request) {
+//        return build(HttpStatus.CONTENT_TOO_LARGE,
+//                "Uploaded file is too large. Maximum size is 5MB.",
+//                request);
+//    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        ApiError body = buildPayload(
+                HttpStatus.CONTENT_TOO_LARGE,
+                "Uploaded file is too large. Maximum size is 5MB.",
+                requestPath(request),
+                requestMethod(request),
+                null);
+
+        return new ResponseEntity<>(body, HttpStatus.CONTENT_TOO_LARGE);
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message, HttpServletRequest request) {
