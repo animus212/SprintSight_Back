@@ -83,6 +83,8 @@ public class SprintService {
         }
 
         sprintMapper.updateSprintFromRequest(request, sprint);
+        sprint.setStartDate(request.startDate());
+        sprint.setEndDate(request.endDate());
 
         return sprintMapper.toSprintSummaryResponse(sprintRepository.save(sprint));
     }
