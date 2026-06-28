@@ -158,8 +158,15 @@ public class IssueService {
     public void deleteIssue(UUID issueId, UUID principalId) {
         Issue issue = findIssue(issueId);
 
-        authorizationService.requireAnyRole(principalId, issue.getProject().getId(),
-                ProjectRole.PRODUCT_OWNER, ProjectRole.SCRUM_MASTER);
+        UUID projectId = issue.getProject().getId();
+        ProjectRole role = authorizationService.getRoleOrThrow(principalId, projectId);
+
+        boolean isPrivileged = role == ProjectRole.PRODUCT_OWNER || role == ProjectRole.SCRUM_MASTER;
+        boolean isCreator = issue.getCreatedBy() != null && issue.getCreatedBy().getId().equals(principalId);
+
+        if (!isPrivileged && !isCreator) {
+            throw new AccessDeniedException("You must be the creator or a privileged role to delete this issue");
+        }
 
         issueRepository.delete(issue);
 
